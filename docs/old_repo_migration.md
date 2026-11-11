@@ -14,8 +14,8 @@
 
 ## 相对旧实现的修正
 1. 一个 Recording 的所有窗口只能进入一个集合，并显式检查集合交集。
-2. 只在原始帧连续且有效的片段内生成窗口，不跨 Recording、物体、split 或无效帧缺口。
-3. 基线使用固定参数，不根据测试结果选模型；需要调参时先用独立验证集。
+2. 只在原始帧连续且有效的片段内生成窗口，不跨 Recording、物体、官方 split 或无效帧缺口。
+3. 基线使用固定参数，不根据测试结果选模型；当前数据每类只有 2 个官方训练 Recording 和 1 个测试 Recording，调参需在训练 Recording 内采用分组交叉验证。
 4. 使用 NPZ 数值数组和 JSON 元数据，不用 pickle。
 5. 明确当前划分检验同类别下未见 Recording 的泛化，不代表未见类别泛化。
 
@@ -32,4 +32,4 @@ python scripts/evaluate_early_classification_baselines.py --data data/processed/
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-真实数据尚未提供给本次变更，因此没有产生真实实验指标。执行前必须完成 docs/data_audit.md 的本地数据核验。
+用户已提供 pressure-only 压缩包并完成首轮本地审查。实际官方 split 为 55 个训练 Recording、27 个测试 Recording；每个非空物体类别为 2 个训练 Recording、1 个测试 Recording。首轮 K=5、stride=10 窗口基线结果见 docs/data_audit.md。结果仅为单一官方划分上的初步窗口级试运行，不是最终论文结论。原始数据和派生数组不提交 GitHub。
