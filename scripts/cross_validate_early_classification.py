@@ -19,7 +19,6 @@ def evaluate_recording_metrics(y_true, y_pred, recording_ids):
             "recording_id": int(rid),
             "n_windows": int(mask.sum()),
             "accuracy": float(accuracy_score(y_true[mask], y_pred[mask])),
-            "macro_f1": float(f1_score(y_true[mask], y_pred[mask], average="macro", zero_division=0)),
         })
     return rows
 
