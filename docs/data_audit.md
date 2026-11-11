@@ -109,6 +109,54 @@ python scripts/audit_dataset.py --data-dir /path/to/extracted_dataset
 
 ## 7. 本地核验结果
 
+**状态：阻塞，尚未取得本地数据；不得将阶段一标记为完成。**
+
+执行环境尝试从官方地址下载压力专用包：
+
+```bash
+curl -L --fail --retry 2 --connect-timeout 20 \
+  -o classification_lite.zip \
+  https://stag.csail.mit.edu/datasets/classification_lite.zip
+```
+
+执行结果：下载未开始。运行环境无法解析官方主机名，curl 返回：
+
+```text
+curl: (6) Could not resolve host: stag.csail.mit.edu
+```
+
+因此，本次没有得到 ZIP 文件，没有计算本地文件 SHA-256，也没有执行 MAT 元数据审查。**本次没有任何本地实测的物体数、Recording 数、帧数、压力数组形状或时间戳统计结果。** 不会用官方网页概述替代本地核验数据。
+
+### 已完成与未完成的区分
+
+| 检查项 | 本次状态 | 证据 |
+|---|---|---|
+| 官方项目页与数据包入口核对 | 已完成（网页资料） | 官方项目页列出 548 个传感器、26 种物体、135,000 帧，以及 36.6 MiB 压力专用包 |
+| 官方 Research License 阅读 | 已完成（网页资料） | 研究用途限制、禁止商业使用及禁止复制/分发条款 |
+| 下载脚本写入仓库 | 已完成 | `scripts/download_dataset.py` |
+| 本地下载 | 未完成 | 执行环境 DNS 解析失败 |
+| ZIP 文件大小与 SHA-256 | 未完成 | 未获得文件 |
+| `metadata.mat` 读取 | 未完成 | 无本地数据 |
+| 物体/Recording/帧数统计 | 未完成 | 无本地数据 |
+| 压力维度、类型、时间戳审查 | 未完成 | 无本地数据 |
+| 548 个传感器坐标映射核验 | 未完成 | 无本地数据及映射文件核验 |
+
+### 阻塞后的继续方式
+
+在能够访问 `stag.csail.mit.edu` 的本地电脑或实验室服务器上，进入仓库根目录执行：
+
+```bash
+python -m pip install -r requirements-data.txt
+python scripts/download_dataset.py
+python scripts/audit_dataset.py --archive data/raw/classification_lite.zip
+```
+
+若该网络环境仍无法访问 MIT 站点，可在浏览器中从官方项目页下载 pressure-only 文件，再将 ZIP 放入 `data/raw/classification_lite.zip`，执行审查命令。不要通过第三方网盘或未经许可的镜像获取或传播数据。
+
+完成后，检查 `results/data_audit/data_audit.json` 和 `object_frame_counts.csv`。只在核验结果确实生成后，才将实测数字和异常情况补充到本节。
+
+本地核验结果
+
 **状态：待运行本地下载与审查。**
 
 目前已核验官方网页和数据说明，但尚未在研究运行环境中取得并检查本地压缩包。因此本文件不把官方网页概述写成本地实测结果，也不提前宣称阶段一的数据检查已经完成。
