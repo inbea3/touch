@@ -40,3 +40,28 @@ class PrototypicalClassifier(nn.Module):
             if chosen.numel() == 0: raise ValueError(f"support episode 缺少类别 {cls}")
             protos.append(chosen.mean(0))
         return -torch.cdist(query, F.normalize(torch.stack(protos), p=2, dim=-1), p=2)
+
+class SpatialPressureCNN(nn.Module):
+    """Location-preserving CNN for (B, K, 32, 32) pressure-map windows.
+
+    Unlike global-average pooling, spatial flattening retains where each sensor
+    is located. The model is intentionally compact for the small number of
+    independent training recordings in this dataset.
+    """
+    def __init__(self, n_classes: int, k_frames: int = 5, dropout: float = 0.5):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(k_frames, 8, 3, padding=1, bias=False),
+            nn.BatchNorm2d(8), nn.ReLU(inplace=True), nn.MaxPool2d(2),
+            nn.Conv2d(8, 16, 3, padding=1, bias=False),
+            nn.BatchNorm2d(16), nn.ReLU(inplace=True), nn.MaxPool2d(2),
+            nn.Conv2d(16, 16, 3, padding=1, bias=False),
+            nn.BatchNorm2d(16), nn.ReLU(inplace=True),
+        )
+        self.head = nn.Sequential(
+            nn.Flatten(), nn.Linear(16 * 8 * 8, 64), nn.ReLU(inplace=True),
+            nn.Dropout(dropout), nn.Linear(64, n_classes),
+        )
+
+    def forward(self, x):
+        return self.head(self.features(x))
