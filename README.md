@@ -27,6 +27,24 @@
 
 - [论文预期流程与研究方案](docs/research_plan.md)
 
+## 旧仓库成果迁移
+
+已将 `inbea3/old` 中早期触觉物体分类的部分可复用组件接入独立探索模块。该路线不替代当前协同激活预测主线。
+
+- [迁移记录与代码审查](docs/old_repo_migration.md)
+- [早期触觉物体分类探索](docs/classification_exploration.md)
+
+可选安装与运行：
+
+```bash
+python -m pip install -r requirements-models.txt
+python scripts/build_early_classification_data.py --metadata data/interim/metadata.mat
+python scripts/evaluate_early_classification_baselines.py
+PYTHONPATH=src python -m unittest discover -s tests -v
+```
+
+当前环境尚未获得真实数据，因此以上分类流程尚未产生真实实验结果。不得将旧仓库记录的指标表述为本仓库复现结果。
+
 ## 研究状态说明
 
 仓库中的研究方案属于**预先制定的研究计划**。文档中提出的模型性能、元学习收益和应用效果均为待验证假设，不代表已经完成实验或取得结果。数据集规模、数据字段、采样方式、许可条件及标签构造细节，均需在正式实验前通过原始数据和数据说明文件核验。
