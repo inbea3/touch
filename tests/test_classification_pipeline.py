@@ -1,6 +1,8 @@
 import unittest
 import numpy as np
-from touch_research.classification.data import build_window_dataset, split_by_recording
+from touch_research.classification.data import (
+    build_window_dataset, split_by_recording, split_by_official_recording
+)
 
 class PipelineTests(unittest.TestCase):
     def metadata(self):
@@ -10,7 +12,8 @@ class PipelineTests(unittest.TestCase):
         return {"pressure":p,"hasValidLabel":np.ones(n,bool),
           "recordingId":np.repeat(np.arange(nrec),frames),
           "objectId":np.repeat(np.repeat([1,2],3),frames),
-          "splitId":np.zeros(n,int),"isBalanced":np.ones(n,bool),
+          "splitId":np.repeat([0,0,1,0,0,1],frames),
+          "isBalanced":np.ones(n,bool),
           "objects":np.array(["empty","object-a","object-b"],dtype=object)}
     def test_window_build_and_group_split(self):
         data,meta=build_window_dataset(self.metadata(),k_frames=5,stride=3)
@@ -20,4 +23,18 @@ class PipelineTests(unittest.TestCase):
         self.assertFalse(sets["train"]&sets["val"])
         self.assertFalse(sets["train"]&sets["test"])
         self.assertFalse(sets["val"]&sets["test"])
+    def test_official_split_keeps_recordings_disjoint(self):
+        data,_=build_window_dataset(self.metadata(),k_frames=5,stride=3)
+        split=split_by_official_recording(data)
+        train=set(data["recording_id"][split["train"]].tolist())
+        test=set(data["recording_id"][split["test"]].tolist())
+        self.assertFalse(train & test)
+        self.assertEqual(len(train),4)
+        self.assertEqual(len(test),2)
+    def test_official_split_rejects_recording_mixed_between_splits(self):
+        data,_=build_window_dataset(self.metadata(),k_frames=5,stride=3)
+        rid=int(data["recording_id"][0])
+        data["split_id"][np.flatnonzero(data["recording_id"]==rid)[0]]=1
+        with self.assertRaises(ValueError):
+            split_by_official_recording(data)
 if __name__ == "__main__": unittest.main()
