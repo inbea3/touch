@@ -136,7 +136,7 @@ Y_{ij}=1
 ```math
 r_{ij}^{(\mathrm{future})}
 =
-\operatorname{Corr}\left(
+\mathrm{Corr}\left(
 x_i(t+1:t+H),
 x_j(t+1:t+H)
 \right)
