@@ -60,7 +60,6 @@ def main():
         acc=[f["models"][name]["window_accuracy"] for f in output["folds"]]
         f1=[f["models"][name]["window_macro_f1"] for f in output["folds"]]
         rec_acc=[r["accuracy"] for f in output["folds"] for r in f["models"][name]["recording_metrics"]]
-        rec_f1=[r["macro_f1"] for f in output["folds"] for r in f["models"][name]["recording_metrics"]]
         output["models"][name]={
           "fold_window_accuracy_mean":float(np.mean(acc)),
           "fold_window_accuracy_sd":float(np.std(acc,ddof=1)),
@@ -68,8 +67,6 @@ def main():
           "fold_window_macro_f1_sd":float(np.std(f1,ddof=1)),
           "recording_accuracy_mean":float(np.mean(rec_acc)),
           "recording_accuracy_sd":float(np.std(rec_acc,ddof=1)),
-          "recording_macro_f1_mean":float(np.mean(rec_f1)),
-          "recording_macro_f1_sd":float(np.std(rec_f1,ddof=1))
         }
     a.output.parent.mkdir(parents=True,exist_ok=True)
     a.output.write_text(json.dumps(output,ensure_ascii=False,indent=2),encoding="utf-8")
