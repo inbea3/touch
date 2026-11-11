@@ -1,0 +1,13 @@
+# Licensed STAG dataset files: never commit raw or derived data
+/data/raw/
+/data/interim/
+/data/processed/
+
+# Local audit outputs may contain dataset-specific metadata
+/results/data_audit/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
