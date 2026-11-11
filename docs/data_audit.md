@@ -49,7 +49,7 @@ classification/
 | `hasValidLabel` | 官方预处理的持握有效帧标记 |
 | `isBalanced` | 是否属于均衡类别采样帧 |
 | `isTransition` | 接触前最后一个空帧标记 |
-| `isGrap` | 可靠物体接触标记 |
+| `isGrasp` | 可靠物体接触标记 |
 
 官方说明还指出，逐 recording 的 `pressuredata.mat` 包含时间戳 `tStamp`、帧号和形状为 (N\times32\times32) 的 int16 压力数组，数值范围描述为 500–1024。压力专用包是否包含全部逐 recording 文件，以实际 ZIP 内容为准。
 
@@ -107,53 +107,84 @@ python scripts/audit_dataset.py --data-dir /path/to/extracted_dataset
 - [ ] 核验官方 split、有效帧和接触标记的分布；
 - [ ] 记录缺失值、异常值和重复帧情况。
 
-## 7. 本地核验结果
+## 7. 本地核验结果（已完成首轮审查）
 
-**状态：阻塞，尚未取得本地数据；不得将阶段一标记为完成。**
+**状态：已取得用户提供的官方 pressure-only 压缩包，并成功读取本地 MAT 文件。**
 
-执行环境尝试从官方地址下载压力专用包：
+### 7.1 文件完整性与内容
 
-```bash
-curl -L --fail --retry 2 --connect-timeout 20 \
-  -o classification_lite.zip \
-  https://stag.csail.mit.edu/datasets/classification_lite.zip
-```
+| 项目 | 实测结果 |
+|---|---:|
+| ZIP 文件大小 | 38,397,353 bytes（约 36.6 MiB） |
+| ZIP 条目 | 2 |
+| ZIP CRC 完整性检查 | 通过 |
+| 文件 1 | `metadata.mat`，38,985,951 bytes |
+| 文件 2 | `readme.html`，9,754 bytes |
+| MAT 读取方式 | SciPy `loadmat`，MATLAB v5 |
+| SHA-256 | `ce0f27ae87e8ce2ec405f756dfe278b0b8011ef12e9de93e468b7ef31ad76c58` |
 
-执行结果：下载未开始。运行环境无法解析官方主机名，curl 返回：
+压缩包没有逐 Recording 的图片及独立 `pressuredata.mat` 文件；但 `metadata.mat` 本身包含完整的 135,187 帧压力矩阵，因此足以进行本阶段压力序列与元数据审查。
 
-```text
-curl: (6) Could not resolve host: stag.csail.mit.edu
-```
+### 7.2 实际数据规模
 
-因此，本次没有得到 ZIP 文件，没有计算本地文件 SHA-256，也没有执行 MAT 元数据审查。**本次没有任何本地实测的物体数、Recording 数、帧数、压力数组形状或时间戳统计结果。** 不会用官方网页概述替代本地核验数据。
+| 指标 | 本地实测 |
+|---|---:|
+| 总帧数 | 135,187 |
+| Recording | 82 |
+| Batch | 3 |
+| 物体类别（含 empty_hand） | 27 |
+| 实际物体类别（不含 empty_hand） | 26 |
+| `hasValidLabel` 为真的帧 | 88,269 |
+| `isBalanced` 为真的帧 | 52,650 |
+| `isGrasp` 为真的帧 | 448 |
+| `isTransition` 为真的帧 | 1,740 |
+| 压力矩阵形状 | (135187, 32, 32) |
+| 压力数据类型 | int16 |
+| 实际压力最小值 / 最大值 | 446 / 1000 |
+| NaN / Inf | 0 / 0 |
+| 非恒定压力像素数 | 548 |
 
-### 已完成与未完成的区分
+注意：压力实测范围 446–1000 与官方 readme 的概括范围 500–1024 不完全一致。预处理不得将观测值强行截断到官方概括范围；当前代码改为按 1024 基准线性缩放且不裁剪，并保留该差异供论文讨论。
 
-| 检查项 | 本次状态 | 证据 |
-|---|---|---|
-| 官方项目页与数据包入口核对 | 已完成（网页资料） | 官方项目页列出 548 个传感器、26 种物体、135,000 帧，以及 36.6 MiB 压力专用包 |
-| 官方 Research License 阅读 | 已完成（网页资料） | 研究用途限制、禁止商业使用及禁止复制/分发条款 |
-| 下载脚本写入仓库 | 已完成 | `scripts/download_dataset.py` |
-| 本地下载 | 未完成 | 执行环境 DNS 解析失败 |
-| ZIP 文件大小与 SHA-256 | 未完成 | 未获得文件 |
-| `metadata.mat` 读取 | 未完成 | 无本地数据 |
-| 物体/Recording/帧数统计 | 未完成 | 无本地数据 |
-| 压力维度、类型、时间戳审查 | 未完成 | 无本地数据 |
-| 548 个传感器坐标映射核验 | 未完成 | 无本地数据及映射文件核验 |
+### 7.3 Recording 与官方划分
 
-### 阻塞后的继续方式
+- 82 个 Recording 均只属于一个 `splitId`，未发现同一 Recording 同时进入官方 train 和 test 的情况。
+- 官方划分共有 55 个 train Recording 和 27 个 test Recording。
+- 每个非空物体类别均有 2 个 train Recording 和 1 个 test Recording；empty_hand 有 3 个 train Recording 和 1 个 test Recording。
+- 因此，正式基线应使用官方 `splitId`，并按 Recording 检查独立性。不能再用随机窗口划分替代官方划分。
+- 每个类别只有一个官方 test Recording，测试结果对该 Recording 的个体差异可能敏感；后续必须报告类别级指标，并在研究局限中说明，不能把数千个窗口当作数千个独立物体样本。
 
-在能够访问 `stag.csail.mit.edu` 的本地电脑或实验室服务器上，进入仓库根目录执行：
+### 7.4 时间戳与连续性
 
-```bash
-python -m pip install -r requirements-data.txt
-python scripts/download_dataset.py
-python scripts/audit_dataset.py --archive data/raw/classification_lite.zip
-```
+在每个 Recording 内，时间戳严格递增。帧号在各 Recording 内连续递增。相邻时间差中位数约为 0.1360 秒；最小值约 0.1170 秒，最大值约 1.6321 秒。存在少量较大的时间间隔，窗口生成必须检查原始帧索引连续性，不能跨越缺口。
 
-若该网络环境仍无法访问 MIT 站点，可在浏览器中从官方项目页下载 pressure-only 文件，再将 ZIP 放入 `data/raw/classification_lite.zip`，执行审查命令。不要通过第三方网盘或未经许可的镜像获取或传播数据。
+### 7.5 第一轮窗口与基线试运行
 
-完成后，检查 `results/data_audit/data_audit.json` 和 `object_frame_counts.csv`。只在核验结果确实生成后，才将实测数字和异常情况补充到本节。
+采用以下固定、可复核的初步设置：
+
+- 排除 `empty_hand`；
+- 仅保留 `hasValidLabel=True` 的帧；
+- 每个窗口取连续 5 帧；
+- 窗口步长为 10 帧；
+- 不跨 Recording、物体类别、官方 split 或无效帧间隔；
+- 548 个非恒定压力像素作为传感器输入；
+- 按官方 `splitId` 划分训练集和测试集；
+- Logistic Regression 与 KNN 使用固定参数，不根据测试集选模型。
+
+得到 7,918 个窗口，其中官方 train 5,632 个、test 2,286 个；训练集覆盖 52 个 Recording，测试集覆盖 26 个 Recording，两个集合没有 Recording 重叠。两侧均覆盖全部 26 个物体类别。
+
+| 固定基线 | Accuracy | Macro-F1 |
+|---|---:|---:|
+| Logistic Regression | 0.2187 | 0.2015 |
+| KNN（k=5） | 0.3513 | 0.3300 |
+
+**这些数值是本次单一官方划分上的初步窗口级试运行，不是最终论文结果。** 同一 Recording 内的窗口相关，不能据此构造普通独立同分布置信区间；后续应补充按 Recording / 类别层级的稳定性分析，并将 CNN、Prototypical Networks 与简单基线在完全一致协议下比较。当前试运行未进行超参数搜索，也未用 test 指标选择模型。
+
+### 7.6 可复核性与许可
+
+原始 ZIP 和 MAT 文件不上传 GitHub。数据审查 JSON、逐类别统计 CSV 和本地实验结果保留在本地运行环境；仓库仅维护审查脚本、协议和研究解释。请在许可允许范围内使用和保存派生结果。
+
+首轮审查结论：该压缩包足以支持压力序列数据审查和早期物体分类基线；但是否足以支持主研究中的传感器协同预测，还需单独核验 `isGrasp` / `isTransition` 的定义、协同标签构造及有效任务数量。
 
 ## 8. 参考资料
 

@@ -5,6 +5,7 @@
 
 # Local audit outputs may contain dataset-specific metadata
 /results/data_audit/
+/results/early_classification/
 
 # Python
 __pycache__/
