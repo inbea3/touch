@@ -9,7 +9,9 @@ class PipelineTests(unittest.TestCase):
     def metadata(self):
         frames=20; nrec=6; n=frames*nrec
         p=np.full((n,32,32),900,dtype=np.int16)
-        rng=np.random.default_rng(9); p[:,:2,:3]+=rng.integers(0,20,size=(n,2,3))
+        rng=np.random.default_rng(9)
+        flat=p.reshape(n,-1)
+        flat[:,:548]+=rng.integers(0,20,size=(n,548))
         return {"pressure":p,"hasValidLabel":np.ones(n,bool),
           "recordingId":np.repeat(np.arange(nrec),frames),
           "objectId":np.repeat(np.repeat([1,2],3),frames),
