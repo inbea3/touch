@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 from touch_research.classification.data import (
-    build_window_dataset, split_by_recording, split_by_official_recording
+    build_window_dataset, split_by_recording, split_by_official_recording,
+    two_fold_recording_cv
 )
 
 class PipelineTests(unittest.TestCase):
@@ -37,4 +38,19 @@ class PipelineTests(unittest.TestCase):
         data["split_id"][np.flatnonzero(data["recording_id"]==rid)[0]]=1
         with self.assertRaises(ValueError):
             split_by_official_recording(data)
+
+    def test_two_fold_cv_uses_only_official_train_recordings(self):
+        data,_=build_window_dataset(self.metadata(),k_frames=5,stride=3)
+        folds=two_fold_recording_cv(data)
+        self.assertEqual(len(folds),2)
+        official_test=set(data["recording_id"][data["split_id"]==1].tolist())
+        for fold in folds:
+            tr=set(data["recording_id"][fold["train"]].tolist())
+            va=set(data["recording_id"][fold["validation"]].tolist())
+            self.assertFalse(tr & va)
+            self.assertFalse(tr & official_test)
+            self.assertFalse(va & official_test)
+            self.assertEqual(set(np.unique(data["object_id"][fold["train"]])),
+                             set(np.unique(data["object_id"][fold["validation"]])))
+
 if __name__ == "__main__": unittest.main()
