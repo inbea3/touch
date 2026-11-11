@@ -117,7 +117,7 @@
 
 模型输入为早期观测及其派生特征，输出为传感器对 $(i,j)$ 的协同概率：
 
-$$
+```math
 \hat{p}_{ij}
 =
 P\left(
@@ -125,7 +125,7 @@ Y_{ij}=1
 \mid
 \mathcal{F}_{\mathrm{early}}
 \right)
-$$
+```
 
 其中，$\mathcal{F}_{\mathrm{early}}$ 表示预测时点可获得的早期观测信息。
 
@@ -133,22 +133,22 @@ $$
 
 一个候选定义是：根据后续 $H$ 帧中两个传感器压力序列的 Pearson 相关系数构造二元标签：
 
-$$
+```math
 r_{ij}^{(\mathrm{future})}
 =
 \operatorname{Corr}\left(
 x_i(t+1:t+H),
 x_j(t+1:t+H)
 \right)
-$$
+```
 
-$$
+```math
 Y_{ij}
 =
 \mathbb{1}\left(
 r_{ij}^{(\mathrm{future})}\geq \tau
 \right)
-$$
+```
 
 其中，前期方案候选阈值为 $\tau=0.7$。
 
@@ -190,7 +190,7 @@ $$
 
 整体流程如下：
 
-$$
+```math
 \text{早期触觉观测}
 \rightarrow
 \text{统计特征与时序编码}
@@ -200,7 +200,7 @@ $$
 \text{边概率预测}
 \rightarrow
 \text{跨物体少样本适应}
-$$
+```
 
 ### 5.2 时序特征提取
 
@@ -239,13 +239,13 @@ GCN 用于聚合邻域信息，学习传感器节点表示，再通过节点对�
 
 对传感器节点 $i$ 和 $j$ 的表示进行组合，输入 MLP 等边预测器，输出协同概率：
 
-$$
+```math
 \hat{p}_{ij}
 =
 \sigma\left(
 f_{\theta}(h_i,h_j,e_{ij})
 \right)
-$$
+```
 
 其中，$h_i$ 和 $h_j$ 为节点表示，$e_{ij}$ 为预测时点可获得的边特征，$\sigma$ 为 Sigmoid 函数。
 
