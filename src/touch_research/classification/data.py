@@ -122,3 +122,46 @@ def split_by_recording(arrays: dict[str, np.ndarray], *, seed: int = 42,
     assert not (sets["train"] & sets["val"] or sets["train"] & sets["test"] or sets["val"] & sets["test"]), "Recording 泄漏"
     out["class_recording_counts"] = counts
     return out
+
+def two_fold_recording_cv(arrays: dict[str, np.ndarray]):
+    """Create two deterministic folds from the official training recordings only.
+
+    For every class, exactly two distinct official-train recordings are required.
+    One recording per class is held out in each fold. Official test recordings are
+    never returned by this function and therefore cannot enter model selection.
+    """
+    y, rec, split = arrays["object_id"], arrays["recording_id"], arrays["split_id"]
+    official = split_by_official_recording(arrays)
+    train_idx = official["train"]
+    test_idx = official["test"]
+    classes = np.unique(y[train_idx])
+    by_class = {}
+    for cls in classes:
+        ids = np.unique(rec[train_idx][y[train_idx] == cls])
+        if ids.size != 2:
+            raise ValueError(
+                f"类别 {int(cls)} 的官方训练 Recording 数为 {ids.size}，"
+                "当前两折方案要求恰好 2 个"
+            )
+        by_class[int(cls)] = np.sort(ids)
+    folds = []
+    for heldout_position in (0, 1):
+        val_recordings = {int(ids[heldout_position]) for ids in by_class.values()}
+        val = train_idx[np.isin(rec[train_idx], list(val_recordings))]
+        fit = train_idx[~np.isin(rec[train_idx], list(val_recordings))]
+        if set(np.unique(y[fit])) != set(classes) or set(np.unique(y[val])) != set(classes):
+            raise AssertionError("两折中的训练/验证类别覆盖不完整")
+        if set(rec[fit].tolist()) & set(rec[val].tolist()):
+            raise AssertionError("训练与验证 Recording 泄漏")
+        if set(rec[fit].tolist()) & set(rec[test_idx].tolist()):
+            raise AssertionError("官方测试 Recording 进入训练折")
+        if set(rec[val].tolist()) & set(rec[test_idx].tolist()):
+            raise AssertionError("官方测试 Recording 进入验证折")
+        folds.append({
+            "train": fit,
+            "validation": val,
+            "train_recordings": sorted(set(rec[fit].tolist())),
+            "validation_recordings": sorted(set(rec[val].tolist())),
+            "official_test_recordings": sorted(set(rec[test_idx].tolist())),
+        })
+    return folds
