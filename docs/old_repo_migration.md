@@ -33,3 +33,24 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
 用户已提供 pressure-only 压缩包并完成首轮本地审查。实际官方 split 为 55 个训练 Recording、27 个测试 Recording；每个非空物体类别为 2 个训练 Recording、1 个测试 Recording。首轮 K=5、stride=10 窗口基线结果见 docs/data_audit.md。结果仅为单一官方划分上的初步窗口级试运行，不是最终论文结论。原始数据和派生数组不提交 GitHub。
+
+## 追加：两折 Recording 级交叉验证
+
+新增 `two_fold_recording_cv` 和 `scripts/cross_validate_early_classification.py`。
+
+协议：
+- 仅使用官方 `splitId=0` 的 52 个可形成有效窗口的训练 Recording；
+- 每个类别恰好有 2 个训练 Recording，每折按类别留出其中 1 个 Recording；
+- 两折轮换验证 Recording；官方 `splitId=1` 的 26 个测试 Recording 不进入训练、验证或模型选择；
+- 标准化参数仅在当前折训练窗口上拟合；
+- 同时报告窗口级指标和逐 Recording Accuracy。单个 Recording 只包含一个真实类别，因此不报告单 Recording Macro-F1，避免该指标产生误导。
+
+真实数据试运行（K=5，stride=10，26 类）：
+| 模型 | 两折窗口 Accuracy 均值 ± SD | 两折窗口 Macro-F1 均值 ± SD | 验证 Recording Accuracy 均值 ± SD |
+|---|---:|---:|---:|
+| Logistic Regression | 0.1894 ± 0.0621 | 0.1628 ± 0.0455 | 0.1850 ± 0.1721 |
+| KNN (k=5) | 0.2359 ± 0.1751 | 0.2158 ± 0.1623 | 0.2314 ± 0.1905 |
+
+每折各包含 26 个训练 Recording、26 个验证 Recording。折间窗口数不相等（第 1 折训练/验证 3472/2160；第 2 折 2160/3472），因此折间均值和标准差仅作描述性稳定性信息，不是独立重复抽样置信区间。Recording 级 Accuracy 的离散程度较大，说明类别表现对具体 Recording 敏感。
+
+这些内部交叉验证指标用于训练集内模型诊断与方案比较，不能替代官方测试集最终评估，也不能把窗口数当成独立样本量。每类只有两个官方训练 Recording，数据不足以支持可靠的高维超参数搜索；建议保持模型复杂度克制。
