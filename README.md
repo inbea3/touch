@@ -17,7 +17,7 @@
 
 ## 当前实施阶段
 
-- 阶段一：数据核验工具和执行文档已建立；官方数据下载受当前执行环境 DNS 解析失败阻塞，尚无本地实测结果。
+- 数据阶段：已读取用户提供的 pressure-only 压缩包并完成首轮审查，真实数据审查见 `docs/data_audit.md`。
 - [阶段一：数据集核验与获取](docs/data_audit.md)
 - [数据目录与下载说明](data/README.md)
 
@@ -33,7 +33,7 @@
 
 - [迁移记录与代码审查](docs/old_repo_migration.md)
 - [早期触觉物体分类探索](docs/classification_exploration.md)
-- [Recording 级误差分析与类别难度](docs/recording_error_analysis.md)
+- [Recording 级误差分析与类别难度](docs/recording_error_analysis.md)\n- [Pressure CNN 两折实验](docs/pressure_cnn_experiment.md)
 
 可选安装与运行：
 
@@ -46,7 +46,7 @@ python scripts/analyze_recording_errors.py
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-当前环境尚未获得真实数据，因此以上分类流程尚未产生真实实验结果。不得将旧仓库记录的指标表述为本仓库复现结果。
+真实数据已用于传统基线、Recording 级误差分析和 Pressure CNN 两折内部验证。官方 test 仍保持封存，相关指标均为训练集内部探索结果，不是最终测试结论。
 
 ## 研究状态说明
 
