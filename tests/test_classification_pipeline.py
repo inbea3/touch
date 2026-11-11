@@ -1,5 +1,7 @@
 import unittest
 import numpy as np
+import torch
+from touch_research.classification.models import SpatialPressureCNN
 from touch_research.classification.data import (
     build_window_dataset, split_by_recording, split_by_official_recording,
     two_fold_recording_cv
@@ -55,4 +57,10 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(set(np.unique(data["object_id"][fold["train"]])),
                              set(np.unique(data["object_id"][fold["validation"]])))
 
-if __name__ == "__main__": unittest.main()
+
+    def test_spatial_pressure_cnn_output_shape(self):
+        model=SpatialPressureCNN(n_classes=26,k_frames=5)
+        x=torch.zeros(3,5,32,32)
+        logits=model(x)
+        self.assertEqual(tuple(logits.shape),(3,26))
+\nif __name__ == "__main__": unittest.main()
