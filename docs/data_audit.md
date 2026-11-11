@@ -155,14 +155,6 @@ python scripts/audit_dataset.py --archive data/raw/classification_lite.zip
 
 完成后，检查 `results/data_audit/data_audit.json` 和 `object_frame_counts.csv`。只在核验结果确实生成后，才将实测数字和异常情况补充到本节。
 
-本地核验结果
-
-**状态：待运行本地下载与审查。**
-
-目前已核验官方网页和数据说明，但尚未在研究运行环境中取得并检查本地压缩包。因此本文件不把官方网页概述写成本地实测结果，也不提前宣称阶段一的数据检查已经完成。
-
-运行脚本后，应将实测数字和异常情况补充于此，并保留审查 JSON/CSV 作为审计记录。
-
 ## 8. 参考资料
 
 1. Sundaram, S., Kellnhofer, P., Li, Y., Zhu, J.-Y., Torralba, A., & Matusik, W. (2019). Learning the signatures of the human grasp using a scalable tactile glove. *Nature*, 569, 698–702. https://doi.org/10.1038/s41586-019-1234-z
