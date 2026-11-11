@@ -1,0 +1,23 @@
+import unittest
+import numpy as np
+from touch_research.classification.data import build_window_dataset, split_by_recording
+
+class PipelineTests(unittest.TestCase):
+    def metadata(self):
+        frames=20; nrec=6; n=frames*nrec
+        p=np.full((n,32,32),900,dtype=np.int16)
+        rng=np.random.default_rng(9); p[:,:2,:3]+=rng.integers(0,20,size=(n,2,3))
+        return {"pressure":p,"hasValidLabel":np.ones(n,bool),
+          "recordingId":np.repeat(np.arange(nrec),frames),
+          "objectId":np.repeat(np.repeat([1,2],3),frames),
+          "splitId":np.zeros(n,int),"isBalanced":np.ones(n,bool),
+          "objects":np.array(["empty","object-a","object-b"],dtype=object)}
+    def test_window_build_and_group_split(self):
+        data,meta=build_window_dataset(self.metadata(),k_frames=5,stride=3)
+        self.assertGreater(meta["n_windows"],0)
+        split=split_by_recording(data,seed=3)
+        sets={k:set(data["recording_id"][split[k]].tolist()) for k in ("train","val","test")}
+        self.assertFalse(sets["train"]&sets["val"])
+        self.assertFalse(sets["train"]&sets["test"])
+        self.assertFalse(sets["val"]&sets["test"])
+if __name__ == "__main__": unittest.main()
