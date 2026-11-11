@@ -28,7 +28,7 @@ def main():
             "recordings_per_class":split["class_recording_counts"],"models":{}}
     models={
       "logistic_regression":make_pipeline(StandardScaler(),LogisticRegression(max_iter=2000,class_weight="balanced",random_state=a.seed)),
-      "knn":make_pipeline(StandardScaler(),KNeighborsClassifier(n_neighbors=5,weights="distance"))}
+      "knn":make_pipeline(StandardScaler(),KNeighborsClassifier(n_neighbors=min(5, tr.size),weights="distance"))}
     for name,model in models.items():
         model.fit(feat[tr],y[tr]); pred=model.predict(feat[te])
         result["models"][name]={"accuracy":float(accuracy_score(y[te],pred)),
