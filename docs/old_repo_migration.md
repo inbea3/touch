@@ -6,7 +6,7 @@
 
 ## 新增内容
 - src/touch_research/classification/data.py：连续有效帧窗口、Recording 分组划分、NPZ/JSON 保存。
-- src/touch_research/classification/models.py：压力图 CNN、传感器统计特征编码器、Prototypical episode 分类器。
+- src/touch_research/classification/models.py：空间位置保留型 Pressure CNN、传感器统计特征编码器、Prototypical episode 分类器。\n- scripts/train_pressure_cnn_cv.py：Pressure CNN 两折 Recording 级训练与验证。\n- docs/pressure_cnn_experiment.md：CNN 实验协议、真实数据结果和限制。
 - scripts/build_early_classification_data.py：从 metadata.mat 构建窗口。
 - scripts/evaluate_early_classification_baselines.py：Logistic Regression 和 KNN 固定参数基线。
 - tests/test_classification_pipeline.py：合成数据测试。
@@ -54,3 +54,19 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 每折各包含 26 个训练 Recording、26 个验证 Recording。折间窗口数不相等（第 1 折训练/验证 3472/2160；第 2 折 2160/3472），因此折间均值和标准差仅作描述性稳定性信息，不是独立重复抽样置信区间。Recording 级 Accuracy 的离散程度较大，说明类别表现对具体 Recording 敏感。
 
 这些内部交叉验证指标用于训练集内模型诊断与方案比较，不能替代官方测试集最终评估，也不能把窗口数当成独立样本量。每类只有两个官方训练 Recording，数据不足以支持可靠的高维超参数搜索；建议保持模型复杂度克制。
+
+## 追加：Pressure CNN 两折实验
+
+新增 `SpatialPressureCNN` 与 `scripts/train_pressure_cnn_cv.py`。为保留传感器空间位置，CNN 使用卷积特征图展平，而不是全局平均池化。每折的像素标准化参数只从该折训练 Recording 估计；官方 test 不参与训练、标准化、早停或模型选择。
+
+真实数据结果（K=5，stride=10，26 类）：
+
+| 模型 | Accuracy 均值 ± 两折 SD | Macro-F1 均值 ± 两折 SD |
+|---|---:|---:|
+| Logistic Regression | 18.94% ± 6.21% | 16.28% ± 4.55% |
+| KNN (k=5) | 23.59% ± 17.51% | 21.58% ± 16.23% |
+| SpatialPressureCNN | 18.57% ± 4.06% | 15.35% ± 2.70% |
+
+CNN 两折 Accuracy 分别为 21.44%、15.70%；Macro-F1 分别为 17.26%、13.44%。CNN 没有超过 KNN，且平均 Macro-F1 略低于 Logistic Regression。该结果不支持“空间 CNN 在当前数据条件下优于传统基线”的主张。
+
+两折 SD 仅是描述性折间波动，不是置信区间；每类只有两个训练 Recording，CNN 早停也依赖每类一个验证 Recording，因此不宜作强显著性推断。详细设置、结果和限制见 `docs/pressure_cnn_experiment.md`。官方测试集仍保持封存，待比较协议锁定后再进行最终评估。
