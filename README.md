@@ -40,6 +40,7 @@
 python -m pip install -r requirements-models.txt
 python scripts/build_early_classification_data.py --metadata data/interim/metadata.mat
 python scripts/evaluate_early_classification_baselines.py
+python scripts/cross_validate_early_classification.py
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
