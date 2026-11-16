@@ -37,6 +37,7 @@
 - [Pressure CNN 两折实验](docs/pressure_cnn_experiment.md)
 - [第四阶段：特征消融与模型机制分析](docs/feature_ablation.md)
 - [第五阶段：协同关系定义与标签审查](docs/coactivation_definition.md)
+- [第五阶段补充：STAG 信号分解复现](docs/stag_signal_decomposition.md)
 
 可选安装与运行：
 
@@ -48,6 +49,7 @@ python scripts/cross_validate_early_classification.py
 python scripts/analyze_recording_errors.py
 python scripts/run_feature_ablation.py
 python scripts/audit_coactivation_labels.py --metadata data/interim/metadata.mat
+python scripts/run_stag_signal_decomposition.py --metadata data/interim/metadata.mat --output-dir results/stag_decomposition
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
