@@ -70,3 +70,21 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 CNN 两折 Accuracy 分别为 21.44%、15.70%；Macro-F1 分别为 17.26%、13.44%。CNN 没有超过 KNN，且平均 Macro-F1 略低于 Logistic Regression。该结果不支持“空间 CNN 在当前数据条件下优于传统基线”的主张。
 
 两折 SD 仅是描述性折间波动，不是置信区间；每类只有两个训练 Recording，CNN 早停也依赖每类一个验证 Recording，因此不宜作强显著性推断。详细设置、结果和限制见 `docs/pressure_cnn_experiment.md`。官方测试集仍保持封存，待比较协议锁定后再进行最终评估。
+
+## 追加：第四阶段特征消融
+
+新增 `scripts/run_feature_ablation.py` 与 `docs/feature_ablation.md`。真实 STAG 数据两折 Recording 级内部验证结果显示：
+
+- KNN 的 K=1 last-frame Accuracy / Macro-F1 为 23.01% / 20.96%；
+- KNN 的 K=5 mean 为 22.99% / 21.05%；
+- KNN 的 K=5 mean+SD 为 23.59% / 21.58%；
+- KNN 在 K=5 mean+SD 不标准化时为 24.79% / 23.06%；
+- MLP-64 在 K=5 mean+SD 下为 18.42% / 15.49%；
+- MLP-64 在 K=5 spatial mean+SD 下为 19.75% / 17.22%。
+
+解释边界：
+1. K=1 取 K=5 窗口末帧，保持相同窗口起点与折分；不能解释为另行采集的单帧实验。
+2. 当前 K=5 均值/标准差增益较小，且两折波动大，不能声称时序统计具有稳定显著增益。
+3. 32×32 统计图的非传感器位置为常数零；展平网格特征与 548 个有效传感器特征在数值上等价（仅补零位置不同），不能把 MLP 的该比较当成独立空间结构检验。
+4. 当前固定 KNN 在不标准化时表现略高，但仅支持当前设定下的描述性发现，不代表标准化普遍有害。
+5. 分类探索的 KNN/CNN/MLP 结果不能替代论文主线的传感器协同激活预测结论。建议暂停堆叠分类模型，回到主线定义协同标签和跨物体预测任务。
