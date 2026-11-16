@@ -154,6 +154,9 @@ python scripts/audit_dataset.py --data-dir /path/to/extracted_dataset
 - 因此，正式基线应使用官方 `splitId`，并按 Recording 检查独立性。不能再用随机窗口划分替代官方划分。
 - 每个类别只有一个官方 test Recording，测试结果对该 Recording 的个体差异可能敏感；后续必须报告类别级指标，并在研究局限中说明，不能把数千个窗口当作数千个独立物体样本。
 
+
+**字段名核对补充：** 随压缩包提供的官方 HTML 将接触标记写作 `isGrap`，但本地 `metadata.mat` 实际变量名为 `isGrasp`。本地数据中 `isGrasp` 共 448 帧，且全部与 `isTransition` 标记重叠；因此在使用事件标记构造分解数据前，需先核验其具体索引语义。
+
 ### 7.4 时间戳与连续性
 
 在每个 Recording 内，时间戳严格递增。帧号在各 Recording 内连续递增。相邻时间差中位数约为 0.1360 秒；最小值约 0.1170 秒，最大值约 1.6321 秒。存在少量较大的时间间隔，窗口生成必须检查原始帧索引连续性，不能跨越缺口。
