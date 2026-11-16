@@ -191,15 +191,17 @@ Y_{ij}^{(\tau)}=\mathbb{1}(R_{ij}^{(\mathrm{future})}\geq\tau)
 
 ### 4.6 STAG 手部姿态与物体压力分解后的标签修订候选
 
-重新审查 pressure-only 数据后，发现 MAT 中包含原论文信号分解使用的事件标记：`isTransition`、`isGrasp` 和 `transitionDir`。官方 HTML README 将 `isGrasp` 拼写为 `isGrap`。本研究将 `isTransition` 作为接触前基线锚点，并将 `transitionDir` 解释为向前到关联接触峰值的帧偏移；该解释由数据结构和压力曲线核对支持，但 README 未正式定义该字段，因此应标注为操作性解释。原论文检测器的完整代码未公开，本阶段使用官方事件锚点复现信号分解，不声称已独立复刻局部极值检测器。
+重新审查 pressure-only 数据后，发现 MAT 中包含原论文信号分解使用的事件标记：`isTransition`、`isGrasp` 和 `transitionDir`。官方 HTML README 将 `isGrasp` 拼写为 `isGrap`。本研究将 `isTransition` 作为接触前基线锚点，并将 `transitionDir` 解释为向前到关联接触峰值的帧偏移；README 未正式定义该字段。经验核验显示，在 448 个可靠事件中，按该偏移得到的峰值锚点有 87.9% 位于平滑均值信号局部极大值的 ±3 帧内，因此该解释具有数据支持，但仍应标注为操作性解释。原论文检测器的完整代码未公开，本阶段使用官方事件锚点，不声称独立复刻了完整局部极值检测器。
 
-压力预处理采用原论文的 500–650 到 0–1 归一化、548 个物理传感器逐帧均值，以及标准差为 3 帧的对称 Gaussian 平滑。对可靠抓取事件，在接触峰值附近按 0.5 阈值提取窗口，并从每帧压力向量减去对应接触前基线帧，得到物体相关压力信号。由于论文没有明确 0.5 阈值的归一化分母，同时报告事件局部上升量归一化（event-relative）与整个 Recording 最小—最大归一化（recording-relative）两种解释。
+压力预处理采用原论文的 500–650 到 0–1 归一化、548 个物理传感器逐帧均值，以及标准差为 3 帧的对称 Gaussian 平滑。对可靠抓取事件，在接触峰值附近按 0.5 阈值提取窗口，并从每帧压力向量减去对应接触前基线帧，得到物体相关压力信号。论文未用公式明确给出 0.5 阈值的归一化分母。结合前文的 Recording dynamic range 描述，当前将 Recording 全局 min–max 归一化（recording-relative）作为主分析候选；接触前基线到接触峰值的局部归一化（event-relative）保留为敏感性分析，不能将后者写成论文明确指定的规则。
 
-真实数据审查得到 1,740 个接触前锚点、448 个可靠抓取事件。event-relative 模式构造 446 个窗口、6,652 个去重帧；recording-relative 模式构造 317 个窗口、4,999 个去重帧。event-relative 窗口帧中 97.9% 也属于 `hasValidLabel`，但只覆盖全部 `hasValidLabel` 帧的 8.23%，说明该分解窗口集中在可靠接触事件附近，而不是持续接触期的全量帧。
+真实数据审查得到 1,740 个接触前锚点、448 个可靠抓取事件，覆盖 74 个 Recording。recording-relative 模式构造 317 个窗口、4,999 个去重帧；event-relative 模式构造 446 个窗口、6,652 个去重帧。全局阈值未通过的 131 个峰值帧全部仍被 `hasValidLabel=True` 标记，说明该阈值具有保守筛选作用，可能舍弃数据集标记为物体持有的弱接触事件。两种规则的窗口边界也存在明显差异，已对代表性事件进行曲线可视化抽查。
 
-在 event-relative 候选下，全部 `hasValidLabel` 原始帧与事件窗口原始帧的正边 Jaccard 中位数为 0.072；同一事件窗口内，原始压力与基线相减后物体压力的边 Spearman 中位数为 0.591、\(\tau=0.7\) 正边 Jaccard 中位数为 0.470；全部原始有效帧与分解后物体压力的 Jaccard 中位数为 0.063。手部姿态基线与物体压力的边 Spearman 中位数为 0.196。Spearman 在每个 Recording 中最多抽取 20,000 条共同有效边估计；Jaccard 和平均绝对相关差使用完整共同有效边。统计汇总单位仍为 Recording，而非边。
+另有 4 个 Recording 没有任何 `isTransition` 或 `isGrasp` 标记：3 个 chain Recording 和 1 个 kiwano Recording，合计仍包含 4,368 个 `hasValidLabel` 帧。对它们试运行论文文字启发的梯度/局部极值检测会产生大量未经验证的候选，故不自动补标，也不混用原始接触帧基线。当前分解主分析排除这 4 个 Recording，保留其在原始 `hasValidLabel` 对照分析中的结果；因此分解主分析只覆盖 25 个物体类别，chain 类别没有可用 Recording，kiwano 剩余 2 个。
 
-因此，下一版主标签候选应调整为**可靠事件窗口内基线相减后的物体相关压力相关矩阵**；原始 `hasValidLabel` 相关矩阵保留为对照/消融条件。但目前没有独立物体压力真值，且 0.5 阈值归一化方式会使有效窗口数从 446 变为 317，故不能提前锁定最终标签。需先人工抽查两种窗口、核验阈值分母，并检查 4 个缺少可靠抓取标记的 Recording。详细方法、统计和复现命令见 `docs/stag_signal_decomposition.md`。
+在 recording-relative 候选下，全部 `hasValidLabel` 原始帧与事件窗口原始帧的正边 Jaccard 中位数为 0.057；同一事件窗口内，原始压力与基线相减后物体压力的边 Spearman 中位数为 0.590、\(\tau=0.7\) 正边 Jaccard 中位数为 0.461；全部原始有效帧与分解后物体压力的 Jaccard 中位数为 0.048。手部姿态基线与物体压力的边 Spearman 中位数为 0.184。所有统计以 Recording 为汇总单位；Spearman 在每个 Recording 中最多抽取 20,000 条共同有效边估计，Jaccard 和平均绝对相关差使用完整共同有效边。
+
+因此，下一版主标签候选仍是**可靠事件窗口内基线相减后的物体相关压力相关矩阵**；原始 `hasValidLabel` 相关矩阵保留为对照/消融条件。但由于 0.5 分母尚未被原作者代码证实、131 个事件被全局阈值排除、4 个 Recording 缺少官方事件锚点，且没有独立物体压力真值，目前不能将其锁定为无误差的最终标签。详细方法、可视化抽查和复现命令见 `docs/stag_signal_decomposition.md`。
 
 
 ## 五、方法设计
