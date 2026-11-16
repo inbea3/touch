@@ -149,7 +149,7 @@ Y_{ij}^{(r,\tau)}
 - 有 74 个 Recording 出现 `isGrasp` 标记；
 - 4 个非空手 Recording 没有该标记：3 个 chain Recording 和 1 个 kiwano Recording。
 
-由于事件标记并未覆盖所有物体 Recording，且两个标记在本地数据中完全重叠，当前版本不依赖它们构造主标签。下一步需要核查 `transitionDir` 等未在公开 README 中解释的字段，并对原论文的信号分解流程进行独立复现和人工抽样检查。
+由于事件标记并未覆盖所有物体 Recording，主标签仍以未来 hasValidLabel 有效接触帧的连续 Pearson 关系为候选；事件标记仅用于物体压力分解的替代标签分析。后续核查限定于 pressure-only 数据，通过压力曲线、官方元数据和统计敏感性分析进行，不开展同步视频核验。
 
 ## 5. 数据划分：必须改为物体级
 
@@ -202,3 +202,19 @@ python scripts/audit_coactivation_labels.py \
 ```
 
 脚本仅输出汇总 JSON 和 Recording 级 CSV；不保存或上传原始压力数组及逐边派生标签。
+
+## 8. 标签块 Bootstrap 敏感性审查与当前冻结候选
+
+已完成 5、10、20 帧 circular moving-block Bootstrap，每组 200 次、固定 96 个节点，覆盖 78 个 Recording 和 26 个物体。主要汇总先按物体聚合其 3 个 Recording。
+
+| 块长 | 边 Spearman 中位数 | r≥0.7 Jaccard 中位数 | MAD 中位数 |
+|---:|---:|---:|---:|
+| 5 帧 | 0.9424 | 0.6047 | 0.0390 |
+| 10 帧 | 0.9193 | 0.5365 | 0.0478 |
+| 20 帧 | 0.8964 | 0.5000 | 0.0539 |
+
+时间自相关中位数在 lag 1、5、10、20、40 帧的平均绝对 ACF 分别约为 0.751、0.435、0.241、0.125、0.072。块长越大，Bootstrap 重抽样矩阵与完整序列参考矩阵的再现指标越低；短块的较高 Jaccard 不应直接解释为标签更可靠，因为短块可能切断明显的局部时间依赖。20 帧作为本轮候选中较保守的主报告设置，5/10 帧保留为敏感性范围；由于长滞后仍有弱相关，不宣称 20 帧完全消除了依赖。
+
+当前标签冻结候选为：未来有效接触帧上的连续 Pearson 相关强度作为主目标，r≥0.7 仅作辅助二元标签。Spearman 与 Ledoit-Wolf 保留为估计器对照。该定义是统计操作标签，不是因果或无误差物理真值。后续进入物体级 Support/Query 划分核验和预测基线，不提前启动 GNN/MAML。
+
+详细报告：docs/coactivation_block_sensitivity.md。
