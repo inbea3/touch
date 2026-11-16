@@ -21,15 +21,22 @@ class StagDecompositionTests(unittest.TestCase):
         self.assertTrue(events[0].reliable)
         self.assertFalse(events[1].reliable)
 
-    def test_event_relative_window(self):
+    def test_event_relative_window_sensitivity(self):
         y=np.array([0,0,0.2,0.4,0.6,1.0,0.7,0.4,0.1,0.0])
         self.assertEqual(event_window(y,0,5,threshold=0.5,normalization="event"),(4,6))
+
+    def test_recording_relative_is_default(self):
+        y=np.array([0.0,0.3,0.4,0.45,0.3,1.0,0.0])
+        # The event peak is locally high but remains below 0.5 of the
+        # recording-wide dynamic range; the paper-aligned default rejects it.
+        self.assertIsNone(event_window(y,1,3,threshold=0.5))
+        self.assertEqual(event_window(y,1,3,threshold=0.5,normalization="event"),(2,3))
 
     def test_decomposition_subtracts_baseline(self):
         x=np.array([[0.,1.],[0.2,0.8],[0.5,0.7],[1.,0.5],[0.7,0.3],[0.2,0.1]],dtype=np.float32)
         y=np.array([0,0.2,0.5,1,0.7,0.2])
         e=GraspEvent(1,0,0,3,3,True)
-        d=decompose_event(x,y,e,radius=3,threshold=0.5,normalization="event")
+        d=decompose_event(x,y,e,radius=3,threshold=0.5)
         self.assertIsNotNone(d)
         self.assertTrue(np.allclose(d.baseline,[0,1]))
         self.assertTrue(np.allclose(d.object_pressure,x[d.window_start:d.window_end+1]-x[0]))
