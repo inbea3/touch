@@ -212,6 +212,20 @@ Y_{ij}^{(\tau)}=\mathbb{1}(R_{ij}^{(\mathrm{future})}\geq\tau)
 因此，下一版主标签候选仍是**可靠事件窗口内基线相减后的物体相关压力相关矩阵**；原始 `hasValidLabel` 相关矩阵保留为对照/消融条件。但由于 0.5 分母尚未被原作者代码证实、131 个事件被全局阈值排除、4 个 Recording 缺少官方事件锚点，且没有独立物体压力真值，目前不能将其锁定为无误差的最终标签。详细方法、可视化抽查和复现命令见 `docs/stag_signal_decomposition.md`。
 
 
+
+
+### 4.7 协同关系标签稳定性与估计方法比较（已完成首轮）
+
+本轮基于 26 个物体、78 个 Recording 和 548 个传感器完成 pressure-only 首轮审查。未来目标仍为最早 5 个 hasValidLabel 帧之后的全部有效接触帧。比较 Pearson、Spearman 和 Ledoit-Wolf 收缩相关；并检查分解事件窗口的 expanded/unique 帧计数及 pooled/event-balanced 相关矩阵差异。
+
+主要结果：Pearson 与 Spearman 的边相关 Spearman 中位数为 0.847；Pearson 与 Ledoit-Wolf 为 0.9997，平均绝对相关差中位数为 0.0083，Ledoit-Wolf 收缩系数中位数为 0.0254。70 个至少有一个合格未来事件窗口的 Recording 中，仅 Recording 049（tape）存在明显窗口重叠，expanded 634 次帧出现、unique 296 帧；其余 Recording 无重复帧。原始压力 expanded/unique 相关矩阵的边 Spearman 与 tau=0.7 Jaccard 中位数均为 1.000。
+
+对基线相减压力，pooled event-frame 与等事件权重 Fisher-z 平均矩阵的边 Spearman 中位数为 0.213、tau=0.7 Jaccard 中位数为 0.018，表明事件长度加权与事件等权对应不同目标。时间块 Bootstrap（块长 10 帧、20 次、96 个节点）得到边 Spearman 中位数 0.925、tau=0.7 Jaccard 中位数 0.539。事件级 Bootstrap（每事件至少 5 帧、100 次、64 个节点）在 60 个 Recording 上可计算区间，95% 区间宽度中位数 0.440，区间不含 0 的边比例中位数 25.6%。以上 Bootstrap 均为子节点和有限重复次数的探索性诊断，不是全部边的正式置信区间。
+
+当前建议：主标签暂保留未来 hasValidLabel 有效接触帧上的连续 Pearson 相关；Spearman 作为稳健性对照，Ledoit-Wolf 作为收缩估计对照；基线相减的物体相关压力标签保留为候选替代和消融，不以 event-balanced 结果取代主标签。详见 `docs/coactivation_stability.md`。
+
+后续先完成时间块长度 5/10/20 帧和至少 200 次重复的敏感性分析，再冻结标签与物体级 Support/Query 划分；在此之前不启动 GNN/MAML 主实验。
+
 ## 五、方法设计
 
 ### 5.1 总体技术路线
