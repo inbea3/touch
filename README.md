@@ -34,6 +34,7 @@
 - [迁移记录与代码审查](docs/old_repo_migration.md)
 - [早期触觉物体分类探索](docs/classification_exploration.md)
 - [Recording 级误差分析与类别难度](docs/recording_error_analysis.md)\n- [Pressure CNN 两折实验](docs/pressure_cnn_experiment.md)
+- [第五阶段：协同关系定义与标签审查](docs/coactivation_definition.md)
 - [第四阶段：特征消融与模型机制分析](docs/feature_ablation.md)
 
 可选安装与运行：
@@ -45,6 +46,7 @@ python scripts/evaluate_early_classification_baselines.py
 python scripts/cross_validate_early_classification.py
 python scripts/analyze_recording_errors.py
 python scripts/run_feature_ablation.py
+python scripts/audit_coactivation_labels.py --metadata data/interim/metadata.mat
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
