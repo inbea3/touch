@@ -42,6 +42,7 @@
 - [第四阶段：特征消融与模型机制分析](docs/feature_ablation.md)
 - [第五阶段：协同关系定义与标签审查](docs/coactivation_definition.md)
 - [第五阶段补充：STAG 信号分解复现](docs/stag_signal_decomposition.md)
+- [第五阶段第三项：协同关系标签稳定性实验](docs/coactivation_stability.md)
 
 可选安装与运行：
 
@@ -55,6 +56,8 @@ python scripts/run_feature_ablation.py
 python scripts/audit_coactivation_labels.py --metadata data/interim/metadata.mat
 python scripts/run_stag_signal_decomposition.py --metadata data/interim/metadata.mat --output-dir results/stag_decomposition
 python scripts/audit_stag_event_windows.py --metadata data/interim/metadata.mat --output-dir results/stag_decomposition
+python scripts/run_coactivation_stability.py --metadata data/interim/metadata.mat --output-dir results/coactivation_stability --k-early 5 --block-length 10 --bootstrap-reps 20 --bootstrap-nodes 96
+python scripts/run_event_cluster_bootstrap.py --metadata data/interim/metadata.mat --output-dir results/coactivation_stability --k-early 5 --min-event-frames 5 --bootstrap-reps 100 --bootstrap-nodes 64
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
