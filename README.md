@@ -50,6 +50,7 @@ python scripts/analyze_recording_errors.py
 python scripts/run_feature_ablation.py
 python scripts/audit_coactivation_labels.py --metadata data/interim/metadata.mat
 python scripts/run_stag_signal_decomposition.py --metadata data/interim/metadata.mat --output-dir results/stag_decomposition
+python scripts/audit_stag_event_windows.py --metadata data/interim/metadata.mat --output-dir results/stag_decomposition
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
