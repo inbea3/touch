@@ -33,7 +33,8 @@
 
 - [迁移记录与代码审查](docs/old_repo_migration.md)
 - [早期触觉物体分类探索](docs/classification_exploration.md)
-- [Recording 级误差分析与类别难度](docs/recording_error_analysis.md)\n- [Pressure CNN 两折实验](docs/pressure_cnn_experiment.md)
+- [Recording 级误差分析与类别难度](docs/recording_error_analysis.md)
+- [Pressure CNN 两折实验](docs/pressure_cnn_experiment.md)
 - [第四阶段：特征消融与模型机制分析](docs/feature_ablation.md)
 - [第五阶段：协同关系定义与标签审查](docs/coactivation_definition.md)
 
