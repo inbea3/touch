@@ -104,13 +104,14 @@ def _event_relative_trace(smoothed_mean: np.ndarray, transition: int, peak: int)
 
 def event_window(smoothed_mean: np.ndarray, transition: int, peak: int,
                  radius: int = 80, threshold: float = 0.5,
-                 normalization: str = "event") -> tuple[int, int] | None:
+                 normalization: str = "recording") -> tuple[int, int] | None:
     """Find the contiguous valid window around the peak, bounded by radius.
 
-    normalization='event' uses the transition-to-peak rise as the local 0--1
-    scale. 'recording' uses the full-recording min--max scale and is retained
-    as a sensitivity analysis because the paper does not spell out the exact
-    normalization denominator for its 0.5 frame-validity threshold.
+    normalization='recording' (default) uses the full-recording min--max
+    scale. This is the primary paper-aligned interpretation because the
+    preceding event criteria are explicitly defined against recording dynamic
+    range. 'event' uses the transition-to-peak rise as a sensitivity analysis.
+    The paper does not state the 0.5 threshold denominator unambiguously.
     """
     y = np.asarray(smoothed_mean, dtype=np.float64).reshape(-1)
     if not (0 <= transition < y.size and 0 <= peak < y.size):
@@ -139,7 +140,7 @@ def event_window(smoothed_mean: np.ndarray, transition: int, peak: int,
 
 def decompose_event(normalized_pressure: np.ndarray, smoothed_mean: np.ndarray,
                     event: GraspEvent, radius: int = 80, threshold: float = 0.5,
-                    normalization: str = "event") -> DecomposedEvent | None:
+                    normalization: str = "recording") -> DecomposedEvent | None:
     """Subtract the pre-contact hand-pose frame from the object-contact window."""
     x = np.asarray(normalized_pressure, dtype=np.float32)
     y = np.asarray(smoothed_mean, dtype=np.float64)
@@ -163,7 +164,7 @@ def decompose_event(normalized_pressure: np.ndarray, smoothed_mean: np.ndarray,
 def decompose_recording(normalized_pressure: np.ndarray, smoothed_mean: np.ndarray,
                         events: Iterable[GraspEvent], radius: int = 80,
                         threshold: float = 0.5,
-                        normalization: str = "event") -> list[DecomposedEvent]:
+                        normalization: str = "recording") -> list[DecomposedEvent]:
     """Decompose all reliable events in one recording."""
     out = []
     for event in events:
