@@ -40,7 +40,7 @@ def describe(values):
             "q25":float(np.quantile(a,.25)),"q75":float(np.quantile(a,.75))}
 
 def lag_autocorrelation(x,lags=(1,5,10,20,30,40,60,80)):
-    z=np.asarray(x,dtype=np.float64);z-=np.mean(z,axis=0,keepdims=True);rows=[]
+    z=np.asarray(x,dtype=np.float64).copy();z-=np.mean(z,axis=0,keepdims=True);rows=[]
     for lag in lags:
         if len(z)<=lag:continue
         a,b=z[:-lag],z[lag:];den=np.sqrt(np.sum(a*a,axis=0)*np.sum(b*b,axis=0))
