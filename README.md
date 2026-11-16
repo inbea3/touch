@@ -43,6 +43,7 @@
 - [第五阶段：协同关系定义与标签审查](docs/coactivation_definition.md)
 - [第五阶段补充：STAG 信号分解复现](docs/stag_signal_decomposition.md)
 - [第五阶段第三项：协同关系标签稳定性实验](docs/coactivation_stability.md)
+- [第五阶段补充：标签块 Bootstrap 敏感性审查](docs/coactivation_block_sensitivity.md)
 
 可选安装与运行：
 
@@ -58,6 +59,8 @@ python scripts/run_stag_signal_decomposition.py --metadata data/interim/metadata
 python scripts/audit_stag_event_windows.py --metadata data/interim/metadata.mat --output-dir results/stag_decomposition
 python scripts/run_coactivation_stability.py --metadata data/interim/metadata.mat --output-dir results/coactivation_stability --k-early 5 --block-length 10 --bootstrap-reps 20 --bootstrap-nodes 96
 python scripts/run_event_cluster_bootstrap.py --metadata data/interim/metadata.mat --output-dir results/coactivation_stability --k-early 5 --min-event-frames 5 --bootstrap-reps 100 --bootstrap-nodes 64
+python scripts/run_coactivation_block_sensitivity.py --metadata data/interim/metadata.mat --output-dir results/coactivation_block_sensitivity --block-lengths 5 10 20 --bootstrap-reps 200 --bootstrap-nodes 96 --k-early 5 --seed 20261116
+python -m unittest discover -s scripts -p 'test_coactivation_block_sensitivity.py' -v
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
