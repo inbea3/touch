@@ -1,0 +1,31 @@
+name: Pressure-only baseline tests
+
+on:
+  push:
+    branches:
+      - integration/old-research-assets
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  stage-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install model requirements
+        run: python -m pip install -r requirements-models.txt
+      - name: Test block bootstrap utilities
+        run: python -m unittest discover -s scripts -p 'test_coactivation_block_sensitivity.py' -v
+      - name: Test object split and Episode utilities
+        run: python -m unittest discover -s tests -p 'test_object_episode_splits.py' -v
+      - name: Test pressure-only prediction baselines
+        run: python -m unittest discover -s tests -p 'test_object_coactivation_baselines.py' -v
