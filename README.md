@@ -47,6 +47,7 @@
 - [第六阶段：物体级划分与 Support / Query Episode 构建](docs/object_episode_protocol.md)
 - [第七阶段：统计预测基线实验](docs/coactivation_baseline_results.md)
 - [第八阶段：重复物体级交叉验证协议](docs/repeated_object_cv_protocol.md)
+- [第八阶段：重复物体级交叉验证结果](docs/repeated_object_cv_results.md)
 
 可选安装与运行：
 
@@ -86,3 +87,6 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 - 不将同一物体内大量帧、窗口或传感器边对误认为独立物体级样本。
 - 使用统计基线和机器学习基线检验复杂模型的必要性。
 - 如实报告负面结果、模型局限和不确定性，不预设复杂模型必然优于简单方法。
+
+
+第八阶段重复物体级交叉验证的汇总结果位于 `results/repeated_object_cv/`，完整实验包可从阶段报告获取。
