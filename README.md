@@ -46,6 +46,7 @@
 - [第五阶段补充：标签块 Bootstrap 敏感性审查](docs/coactivation_block_sensitivity.md)
 - [第六阶段：物体级划分与 Support / Query Episode 构建](docs/object_episode_protocol.md)
 - [第七阶段：统计预测基线实验](docs/coactivation_baseline_results.md)
+- [第八阶段：重复物体级划分稳健性协议](docs/repeated_object_holdout_protocol.md)
 - [第八阶段：重复物体级交叉验证协议](docs/repeated_object_cv_protocol.md)
 - [第八阶段：重复物体级交叉验证结果](docs/repeated_object_cv_results.md)
 
@@ -69,6 +70,8 @@ python scripts/build_object_episode_splits.py --metadata data/interim/metadata.m
 python -m unittest discover -s tests -p 'test_object_episode_splits.py' -v
 python scripts/run_object_coactivation_baselines.py --metadata data/interim/metadata.mat --split-manifest results/object_episode_splits/object_split_manifest.json --output-dir results/coactivation_baselines --seed 20261116 --nodes 96 --mlp-epochs 50 --adapt-epochs 5
 python -m unittest discover -s tests -p 'test_object_coactivation_baselines.py' -v
+python scripts/run_repeated_object_holdout.py --metadata data/interim/metadata.mat --output-dir results/repeated_object_holdout --n-repeats 20 --split-seed 20261118 --sensor-seed 20261116 --nodes 96 --mlp-epochs 50 --adapt-epochs 5
+python -m unittest discover -s tests -p 'test_repeated_object_holdout.py' -v
 python scripts/run_repeated_object_cv.py --metadata data/interim/metadata.mat --split-manifest results/object_episode_splits/object_split_manifest.json --output-dir results/repeated_object_cv --repeats 5 --folds 5 --split-seed 20261119 --sensor-seed 20261116 --model-seed 20261116 --nodes 96 --mlp-epochs 50 --adapt-epochs 5 --bootstrap-reps 5000
 python -m unittest discover -s tests -p 'test_repeated_object_cv.py' -v
 PYTHONPATH=src python -m unittest discover -s tests -v
