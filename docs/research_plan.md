@@ -238,6 +238,21 @@ Y_{ij}^{(\tau)}=\mathbb{1}(R_{ij}^{(\mathrm{future})}\geq\tau)
 下一阶段转向物体级外层划分与 Support/Query 协议核验；随后先建立常数预测、历史相关、Logistic Regression 和 MLP 基线，再依据增量收益决定是否进入 GNN/MAML。
 
 
+
+### 4.9 物体级外层划分与 Support / Query Episode 构建（已完成）
+
+使用 pressure-only 的 metadata.mat 对 26 个非空物体和 78 个 Recording 进行重新分组。固定随机种子为 20261118，按物体划分为 Meta-train 18 个物体/54 个 Recording、Meta-validation 4 个物体/12 个 Recording、Meta-test 4 个物体/12 个 Recording。同一物体的三个 Recording 始终位于同一外层集合；官方 Recording 级 splitId 仅作为追溯字段，不用于外层划分。
+
+固定对象集合：Meta-train 为 allen_key_set、ball、battery、board_eraser、cat、empty_can、gel、kiwano、lotion、mug、multimeter、safety_glasses、scissors、screw_driver、spoon、spray_can、tape、tea_box；Meta-validation 为 brain、chain、coin、pen；Meta-test 为 bracket、clip、full_can、stapler。
+
+每个物体的三个 Recording 穷举全部 Support 组合：1-shot 为 1 个 Support + 2 个 Query，3 种组合；2-shot 为 2 个 Support + 1 个 Query，3 种组合。共生成 156 个 Episode：Meta-train 108、Meta-validation 24、Meta-test 24。156 个 Episode 是可复现的组合清单，不是 156 个独立任务；独立外层任务单位仍为物体，Meta-train 仅有 18 个任务，Meta-test 仅有 4 个物体。
+
+真实数据核验：78 个 Recording 中，60 个最早 5 个有效接触帧在原始 frame 编号上连续，18 个不连续；输入时间跨度中位数 0.5460 秒，最大 5.3193 秒。每个 Recording 的未来有效接触帧数均值 1,009.54，中位数 910，范围 410–1,922。因此 K=5 必须表述为“最早 5 个有效帧”，不能误称为“连续 5 帧”。
+
+自动审查已通过：26 个物体集合两两不重叠；78 个 Recording 全部且仅分配一次；同一物体 Recording 不跨集合；每个 Episode 的 Support / Query Recording 不重叠，且均属于同一物体和同一外层集合。单元测试 5/5 通过。详细协议、物体名单、局限和复现命令见 `docs/object_episode_protocol.md`。
+
+当前统计限制：单次固定划分只有 4 个 Meta-test 物体。Support / Query 的穷举排列会重复使用 Recording，不能将 Episode 当成独立样本。测试结果必须先按物体汇总，并逐物体报告。后续可增加独立的重复物体级划分或外层交叉验证作为稳健性分析，但不能根据测试集表现调整当前固定划分。
+
 ## 五、方法设计
 
 ### 5.1 总体技术路线
