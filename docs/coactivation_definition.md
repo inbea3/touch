@@ -237,3 +237,12 @@ Meta-train 物体：allen_key_set、ball、battery、board_eraser、cat、empty_
 自动化泄露审查全部通过，单元测试 5/5 通过。注意 156 个 Episode 是重复组合，不能视为独立任务；Meta-train 只有 18 个独立物体任务，Meta-test 只有 4 个物体，统计不确定性较高。详细记录见 `docs/object_episode_protocol.md`。
 
 当前下一步应先建立常数预测、历史相关、Logistic Regression 和 MLP 基线，并在固定 Episode 上分别评估 1-shot/2-shot；所有结果先按物体聚合。之后再根据基线增量收益判断 GNN/MAML 的必要性。不能仅凭 4 个测试物体得出强泛化结论。
+
+
+## 10. 首轮统计预测基线（已完成）
+
+在固定 18/4/4 物体划分上完成常数预测、早期历史相关、Logistic Regression 和 MLP。使用固定 96/548 传感器子集，每个 Recording 4,560 条无向边。Meta-test 四个物体汇总：常数 MAE 0.1314；历史五帧 Pearson MAE 0.4470；MLP 零样本 MAE 0.1100、RMSE 0.1457、Spearman 0.4003。相较常数基线，MLP MAE 下降约 16.3%。MLP 1-shot 适应 MAE 0.1130，2-shot 适应 MAE 0.1099，Support 适应没有稳定收益。
+
+辅助 r≥0.7 分类的测试正类比例约 0.71%。Logistic 零样本 AUROC 0.8907、AP 0.1078、F1 0.0498、Precision 0.0258、Recall 0.8639。类别极不平衡，Precision 较低。MLP 回归分数排序 AUROC 0.9107，但固定 0.7 阈值下 F1 为 0，说明需要单独校准，不能把回归分数直接解释为分类概率。
+
+当前结论仅为首轮基线：MLP 有相对常数预测的增量，历史相关基线较弱，少样本适应尚无稳定收益。Meta-test 只有 4 个物体且只使用 96/548 个传感器，不能据此作强泛化结论或宣称 MAML 必要。详细结果见 docs/coactivation_baseline_results.md。下一步先做验证集校准、输入连续性/时间跨度敏感性和重复物体划分，不立即启动 MAML。
