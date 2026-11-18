@@ -218,3 +218,22 @@ python scripts/audit_coactivation_labels.py \
 当前标签冻结候选为：未来有效接触帧上的连续 Pearson 相关强度作为主目标，r≥0.7 仅作辅助二元标签。Spearman 与 Ledoit-Wolf 保留为估计器对照。该定义是统计操作标签，不是因果或无误差物理真值。后续进入物体级 Support/Query 划分核验和预测基线，不提前启动 GNN/MAML。
 
 详细报告：docs/coactivation_block_sensitivity.md。
+
+
+## 9. 已执行：物体级外层划分与 Support / Query Episode
+
+本阶段已在真实 pressure-only metadata.mat 上生成固定划分和 Episode 清单。随机种子为 20261118：
+
+- Meta-train：18 个物体、54 个 Recording；
+- Meta-validation：4 个物体、12 个 Recording；
+- Meta-test：4 个物体、12 个 Recording。
+
+Meta-train 物体：allen_key_set、ball、battery、board_eraser、cat、empty_can、gel、kiwano、lotion、mug、multimeter、safety_glasses、scissors、screw_driver、spoon、spray_can、tape、tea_box。Meta-validation：brain、chain、coin、pen。Meta-test：bracket、clip、full_can、stapler。
+
+每个物体的三个 Recording 穷举 1-shot 和 2-shot Support 组合，分别得到 3 个 Episode；共计 156 个 Episode（108/24/24）。同一 Episode 内 Support 与 Query 按 Recording 分开；同一物体的 Recording 不跨越外层集合。官方 splitId 仅保留作诊断字段。
+
+输入边界仍为最早 5 个 hasValidLabel 有效帧。78 个 Recording 中 60 个输入帧组连续、18 个不连续；输入时间跨度中位数 0.5460 秒、最大 5.3193 秒。目标为第 5 个输入有效帧之后的全部有效接触帧。
+
+自动化泄露审查全部通过，单元测试 5/5 通过。注意 156 个 Episode 是重复组合，不能视为独立任务；Meta-train 只有 18 个独立物体任务，Meta-test 只有 4 个物体，统计不确定性较高。详细记录见 `docs/object_episode_protocol.md`。
+
+当前下一步应先建立常数预测、历史相关、Logistic Regression 和 MLP 基线，并在固定 Episode 上分别评估 1-shot/2-shot；所有结果先按物体聚合。之后再根据基线增量收益判断 GNN/MAML 的必要性。不能仅凭 4 个测试物体得出强泛化结论。
