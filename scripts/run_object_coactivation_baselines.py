@@ -102,12 +102,12 @@ def stats(vals):
     return {"n":int(len(a)),"mean":float(a.mean()) if len(a) else None,
       "sd":float(a.std(ddof=1)) if len(a)>1 else (0.0 if len(a) else None)}
 
-def evaluate(data,split,mlp,logit,train_mean,adapt_epochs=5):
+def evaluate(data,split,mlp,logit,train_mean,adapt_epochs=5,logistic_penalty=1.0):
     eps=[]
     for oid,k,s,q in episodes(data,split):
         Xs,ys=stack(data,s);adapted=copy.deepcopy(mlp);adapted.verbose=False
         for _ in range(adapt_epochs): adapted.partial_fit(Xs,ys)
-        w,b=adapt_logistic(logit,Xs,ys);sm=float(np.mean([data[r]["y"].mean() for r in s]));rows=[]
+        w,b=adapt_logistic(logit,Xs,ys,penalty=logistic_penalty);sm=float(np.mean([data[r]["y"].mean() for r in s]));rows=[]
         for rid in q:
             d=data[rid];X,y,h=d["X"],d["y"],d["history"]
             preds={"constant_train":np.full_like(y,train_mean),"constant_support":np.full_like(y,sm),
@@ -168,8 +168,8 @@ def main():
       early_stopping=False,random_state=a.seed,verbose=False).fit(Xs,y)
     logit=LogisticRegression(C=1,class_weight="balanced",max_iter=500,solver="lbfgs").fit(Xs,(y>=TAU).astype(int))
     for d in data.values(): d["X"]=scaler.transform(d["X"]).astype(np.float32)
-    val=evaluate(data,"meta_validation",mlp,logit,mean,a.adapt_epochs)
-    test=evaluate(data,"meta_test",mlp,logit,mean,a.adapt_epochs)
+    val=evaluate(data,"meta_validation",mlp,logit,mean,a.adapt_epochs,a.logistic_prior_penalty)
+    test=evaluate(data,"meta_test",mlp,logit,mean,a.adapt_epochs,a.logistic_prior_penalty)
     a.output_dir.mkdir(parents=True,exist_ok=True)
     coverage=[{"recording_id":r,"object_id":d["object_id"],"object_name":d["object_name"],
       "split":d["split"],"n_edges":len(d["y"]),"n_future_frames":d["n_future"],
