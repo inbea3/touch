@@ -51,13 +51,16 @@ def main():
     if a.n_repeats<2: ap.error("--n-repeats must be at least 2")
     a.output_dir.mkdir(parents=True,exist_ok=True)
     mat=loadmat(a.metadata,simplify_cells=True)
-    split_rows=[];object_rows=[];test_appearances={};sensor_indices=None
+    split_rows=[];object_rows=[];assignment_rows=[];test_appearances={};sensor_indices=None
     with tempfile.TemporaryDirectory(prefix="stag_repeated_splits_") as td:
       for i in range(a.n_repeats):
         split_seed=a.split_seed+i
         split_dir=Path(td)/f"split_{i:03d}"
         build_split(a.metadata,split_dir,seed=split_seed,k_early=5)
         manifest=json.loads((split_dir/"object_split_manifest.json").read_text(encoding="utf-8"))
+        for split_name,entries in manifest["object_splits"].items():
+          for entry in entries:
+            assignment_rows.append({"repeat":i+1,"split_seed":split_seed,"object_id":entry["object_id"],"object_name":entry["object_name"],"split":split_name,"recording_ids":";".join(map(str,entry["recording_ids"]))})
         data,indices=extract(mat,manifest,n_nodes=a.nodes,seed=a.sensor_seed)
         if sensor_indices is None: sensor_indices=indices
         elif indices!=sensor_indices: raise RuntimeError("Sensor subset changed across repeats")
@@ -87,6 +90,7 @@ def main():
                   "object_mean":agg["mean"],"object_sd":agg["sd"],"n_test_objects":agg["n"]})
         print(f"[{i+1}/{a.n_repeats}] split_seed={split_seed} "
           f"test_objects={','.join(x['object_name'] for x in manifest['object_splits']['meta_test'])}")
+    write_csv(a.output_dir/"repeated_split_assignments.csv",assignment_rows)
     write_csv(a.output_dir/"repeated_split_object_metrics.csv",object_rows)
     write_csv(a.output_dir/"repeated_split_run_metrics.csv",split_rows)
     pooled=[]
@@ -114,6 +118,7 @@ def main():
       "logistic":{"C":1,"class_weight":"balanced","support_prior_penalty":a.logistic_prior_penalty},
       "aggregation":"within each repeat average over held-out objects; summarize repeat-level object means; object appearances are reused across repeats and are not independent",
       "repeat_level_summary":run_summary,
+      "assignment_file":"repeated_split_assignments.csv",
       "limitations":["Repeated splits reuse the same 26 objects; repeat-level variation is a robustness summary, not independent replication.",
        "Each repeat has only four held-out objects.",
        "Only the fixed sensor subset is evaluated; no full-array claim.",
