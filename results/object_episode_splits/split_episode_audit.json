@@ -1,0 +1,73 @@
+{
+  "n_objects": 26,
+  "n_recordings": 78,
+  "n_empty_hand_recordings_excluded": 4,
+  "n_episodes_total": 156,
+  "episodes_by_split": {
+    "meta_train": 108,
+    "meta_validation": 24,
+    "meta_test": 24
+  },
+  "episodes_by_split_and_shots": {
+    "meta_train": {
+      "1": 54,
+      "2": 54
+    },
+    "meta_validation": {
+      "1": 12,
+      "2": 12
+    },
+    "meta_test": {
+      "1": 12,
+      "2": 12
+    }
+  },
+  "split_summary": {
+    "meta_train": {
+      "n_objects": 18,
+      "n_recordings": 54,
+      "mean_future_valid_frames_per_object": 1002.8888888888891,
+      "min_object_mean_future_valid_frames": 764,
+      "max_object_mean_future_valid_frames": 1189.6666666666667
+    },
+    "meta_validation": {
+      "n_objects": 4,
+      "n_recordings": 12,
+      "mean_future_valid_frames_per_object": 982.6666666666667,
+      "min_object_mean_future_valid_frames": 817.3333333333334,
+      "max_object_mean_future_valid_frames": 1098
+    },
+    "meta_test": {
+      "n_objects": 4,
+      "n_recordings": 12,
+      "mean_future_valid_frames_per_object": 1066.3333333333333,
+      "min_object_mean_future_valid_frames": 922.6666666666666,
+      "max_object_mean_future_valid_frames": 1263.6666666666667
+    }
+  },
+  "recording_level": {
+    "future_valid_frames_mean": 1009.5384615384615,
+    "future_valid_frames_median": 910,
+    "future_valid_frames_min": 410,
+    "future_valid_frames_max": 1922,
+    "early_input_contiguous_recordings": 60,
+    "early_input_noncontiguous_recordings": 18,
+    "early_input_span_median_sec": 0.5460312366485596,
+    "early_input_span_max_sec": 5.3193042278289795
+  },
+  "leakage_checks": {
+    "object_partition_disjoint": true,
+    "recording_partition_complete": true,
+    "same_object_recordings_stay_in_one_split": true,
+    "support_query_recording_disjoint": true,
+    "episode_recordings_match_episode_object": true,
+    "episode_recordings_match_outer_split": true
+  },
+  "limitations": [
+    "Only four held-out meta-test objects in this single split; object-level uncertainty is high.",
+    "Six Support/Query permutations per object are correlated, not six independent tasks.",
+    "Official Recording-level split is diagnostic only and does not define the object split.",
+    "The earliest five valid frames are not always consecutive; input span sensitivity remains necessary.",
+    "No raw pressure arrays or edge-level labels are exported."
+  ]
+}
