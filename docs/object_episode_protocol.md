@@ -101,7 +101,7 @@
 
 ## 9. 复现命令
 
-\`\`\`bash
+```bash
 python scripts/build_object_episode_splits.py \\
   --metadata data/interim/metadata.mat \\
   --output-dir results/object_episode_splits \\
@@ -109,6 +109,6 @@ python scripts/build_object_episode_splits.py \\
   --k-early 5
 
 python -m unittest discover -s tests -p 'test_object_episode_splits.py' -v
-\`\`\`
+```
 
 输出包括 object_split_manifest.json、recording_manifest.csv、episode_manifest.csv 和 split_episode_audit.json。清单仅包含对象/Recording 索引、时间边界、帧数统计和 Episode 分配，不包含原始压力数组或逐边标签。
