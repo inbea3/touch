@@ -253,6 +253,17 @@ Y_{ij}^{(\tau)}=\mathbb{1}(R_{ij}^{(\mathrm{future})}\geq\tau)
 
 当前统计限制：单次固定划分只有 4 个 Meta-test 物体。Support / Query 的穷举排列会重复使用 Recording，不能将 Episode 当成独立样本。测试结果必须先按物体汇总，并逐物体报告。后续可增加独立的重复物体级划分或外层交叉验证作为稳健性分析，但不能根据测试集表现调整当前固定划分。
 
+
+### 4.10 统计预测基线实验（首轮已完成）
+
+在固定 18/4/4 物体级划分和 1-shot/2-shot Support/Query 协议上，使用 pressure-only 数据完成常数预测、早期历史相关、Logistic Regression 和 MLP 基线。固定 96/548 个传感器子集，每个 Recording 4,560 条无向边；训练标准化器与全局模型仅使用 18 个 Meta-train 物体。连续未来 Pearson 为主目标，r≥0.7 为辅助分类目标。
+
+Meta-test 四个物体汇总结果：常数预测 MAE=0.1314、RMSE=0.1718；早期五帧直接相关 MAE=0.4470、Spearman=0.0156；MLP 零样本 MAE=0.1100、RMSE=0.1457、Spearman=0.4003。MLP 零样本相对常数基线 MAE 下降约 16.3%。MLP 1-shot Support 适应 MAE=0.1130，2-shot 适应 MAE=0.1099，适应收益不稳定且幅度很小。
+
+辅助分类中，Meta-test 正边比例约 0.71%。Logistic 零样本 AUROC=0.8907、AP=0.1078、F1=0.0498、Precision=0.0258、Recall=0.8639。MLP 连续预测分数的排序 AUROC=0.9107、AP=0.1736，但直接以 0.7 阈值转成类别时 F1=0，说明回归输出尚未校准为分类概率。
+
+当前结论仅为首轮基线证据：MLP 提供了相对常数预测的预测增量；历史五帧 Pearson 不适合作为直接预测器；Support 适应尚无稳定收益。Meta-test 只有 4 个物体，且本轮只使用 96/548 个传感器，因此不能据此宣称最终泛化性能或 MAML 有效。完整方法、逐物体结果、限制和复现命令见 docs/coactivation_baseline_results.md。
+
 ## 五、方法设计
 
 ### 5.1 总体技术路线
