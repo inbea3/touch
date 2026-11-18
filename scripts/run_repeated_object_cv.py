@@ -189,7 +189,37 @@ def main():
     (out/"repeated_cv_results.json").write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
     write_csv(out/"repeated_cv_object_repeat_metrics.csv",long);write_csv(out/"repeated_cv_object_metrics.csv",obj)
     write_csv(out/"repeated_cv_fold_summary.csv",fold_summary);write_csv(out/"repeated_cv_repeat_summary.csv",repeat_summary)
-    write_csv(out/"repeated_cv_paired_differences.csv",diffs)
+    summary_rows=[]
+    for shots,models in summary.items():
+        for model,groups in models.items():
+            for group,metrics in groups.items():
+                for metric,stat in metrics.items():
+                    summary_rows.append({"shots":shots,"model":model,"metric_group":group,"metric":metric,**stat})
+    write_csv(out/"repeated_cv_summary.csv",summary_rows)
+    paired_rows=[]
+    for item in diffs:
+        absolute=item["absolute_mae_improvement"];relative=item["relative_mae_reduction"] or {}
+        paired_rows.append({"shots":item["shots"],"comparison":item["comparison"],"n_objects":item["n_objects"],
+            "positive_object_count":item["positive_object_count"],"absolute_improvement_mean":absolute.get("mean"),
+            "absolute_improvement_sd":absolute.get("sd"),"absolute_ci95_low":absolute.get("ci95_low"),
+            "absolute_ci95_high":absolute.get("ci95_high"),"relative_reduction_mean":relative.get("mean"),
+            "relative_ci95_low":relative.get("ci95_low"),"relative_ci95_high":relative.get("ci95_high")})
+    write_csv(out/"repeated_cv_paired_differences.csv",paired_rows)
+    object_mae=[]
+    for oid in sorted({r["object_id"] for r in obj}):
+        for shots in (1,2):
+            look={(r["model"],r["metric_group"],r["metric"]):r["mean_across_repeats"]
+                for r in obj if r["object_id"]==oid and r["shots"]==shots}
+            if not look: continue
+            constant=look[("constant_train","regression","mae")]
+            zero=look[("mlp_zero_shot","regression","mae")]
+            adapted=look[("mlp_support_adapted","regression","mae")]
+            name=next(r["object_name"] for r in obj if r["object_id"]==oid)
+            object_mae.append({"object_id":oid,"object_name":name,"shots":shots,
+                "constant_train_mae":constant,"mlp_zero_shot_mae":zero,"mlp_support_adapted_mae":adapted,
+                "constant_minus_mlp_zero_shot":constant-zero,"constant_minus_mlp_adapted":constant-adapted,
+                "zero_shot_minus_adapted":zero-adapted})
+    write_csv(out/"repeated_cv_object_mae.csv",object_mae)
     print(json.dumps({"summary_by_shots":summary,"paired_mae_differences":diffs,
         "runtime_seconds":result["runtime_seconds"]},ensure_ascii=False,indent=2))
 
