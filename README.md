@@ -45,6 +45,7 @@
 - [第五阶段第三项：协同关系标签稳定性实验](docs/coactivation_stability.md)
 - [第五阶段补充：标签块 Bootstrap 敏感性审查](docs/coactivation_block_sensitivity.md)
 - [第六阶段：物体级划分与 Support / Query Episode 构建](docs/object_episode_protocol.md)
+- [第七阶段：统计预测基线实验](docs/coactivation_baseline_results.md)
 
 可选安装与运行：
 
@@ -64,6 +65,8 @@ python scripts/run_coactivation_block_sensitivity.py --metadata data/interim/met
 python -m unittest discover -s scripts -p 'test_coactivation_block_sensitivity.py' -v
 python scripts/build_object_episode_splits.py --metadata data/interim/metadata.mat --output-dir results/object_episode_splits --seed 20261118 --k-early 5
 python -m unittest discover -s tests -p 'test_object_episode_splits.py' -v
+python scripts/run_object_coactivation_baselines.py --metadata data/interim/metadata.mat --split-manifest results/object_episode_splits/object_split_manifest.json --output-dir results/coactivation_baselines --seed 20261116 --nodes 96 --mlp-epochs 50 --adapt-epochs 5
+python -m unittest discover -s tests -p 'test_object_coactivation_baselines.py' -v
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
