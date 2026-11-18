@@ -36,6 +36,57 @@ def all_object_manifest(fixed):
     if any(len(e["recording_ids"])!=3 for e in entries): raise ValueError("Expected 3 recordings per object")
     return {"object_splits":{"all_objects":entries}},ids
 
+
+def prepare_input_windows(mat, manifest, mode="earliest_valid", k=5):
+    """Select earliest K valid frames or the earliest K-frame consecutive valid run."""
+    if mode not in {"earliest_valid","earliest_consecutive_valid"}:
+        raise ValueError("Unsupported input mode: "+mode)
+    rec=np.asarray(mat["recordingId"]).reshape(-1).astype(np.int64)
+    obj=np.asarray(mat["objectId"]).reshape(-1).astype(np.int64)
+    ts=np.asarray(mat["ts"]).reshape(-1).astype(float)
+    frame=np.asarray(mat["frame"]).reshape(-1).astype(np.int64)
+    original=np.asarray(mat["hasValidLabel"]).reshape(-1).astype(bool)
+    new_valid=original.copy(); rows=[]
+    owner={}
+    for e in manifest["object_splits"]["all_objects"]:
+        for rid in e["recording_ids"]: owner[int(rid)]=(int(e["object_id"]),str(e["object_name"]))
+    for rid,(oid,name) in sorted(owner.items()):
+        ix=np.flatnonzero(rec==rid)
+        if not len(ix) or len(np.unique(obj[ix]))!=1 or int(obj[ix][0])!=oid:
+            raise ValueError("Recording/object mismatch: "+str(rid))
+        ix=ix[np.argsort(ts[ix],kind="stable")]
+        vp=np.flatnonzero(original[ix])
+        if len(vp)<k+4: raise ValueError("Insufficient valid frames: "+str(rid))
+        if mode=="earliest_valid": chosen=vp[:k]
+        else:
+            vf=frame[ix[vp]]; start=None
+            for j in range(len(vp)-k+1):
+                if np.all(np.diff(vf[j:j+k])==1): start=j;break
+            if start is None: raise ValueError("No consecutive valid input window: "+str(rid))
+            chosen=vp[start:start+k]
+            new_valid[ix[:int(chosen[0])]]=False
+        selected=ix[chosen]; future=int(np.sum(vp>chosen[-1]))
+        if future<4: raise ValueError("Too few future valid frames: "+str(rid))
+        fr=frame[selected].astype(int).tolist()
+        rows.append({"recording_id":rid,"object_id":oid,"object_name":name,"input_mode":mode,
+            "first_valid_frame_id":int(frame[ix[vp[0]]]),"input_frame_ids":";".join(map(str,fr)),
+            "input_first_frame_id":fr[0],"input_last_frame_id":fr[-1],
+            "input_span_sec":float(ts[selected[-1]]-ts[selected[0]]),
+            "delay_from_first_valid_sec":float(ts[selected[0]]-ts[ix[vp[0]]]),
+            "n_valid_frames_skipped_before_input":int(np.sum(vp<chosen[0])),
+            "n_future_valid_frames":future,"input_is_contiguous":bool(np.all(np.diff(fr)==1))})
+    if len(rows)!=78: raise ValueError("Expected 78 input windows")
+    spans=np.asarray([r["input_span_sec"] for r in rows],float)
+    audit={"mode":mode,"n_recordings":len(rows),
+        "n_contiguous_windows":int(sum(r["input_is_contiguous"] for r in rows)),
+        "n_shifted_windows":int(sum(r["n_valid_frames_skipped_before_input"]>0 for r in rows)),
+        "median_input_span_sec":float(np.median(spans)),"max_input_span_sec":float(np.max(spans)),
+        "median_delay_from_first_valid_sec":float(np.median([r["delay_from_first_valid_sec"] for r in rows])),
+        "max_delay_from_first_valid_sec":float(np.max([r["delay_from_first_valid_sec"] for r in rows])),
+        "total_valid_frames_skipped":int(sum(r["n_valid_frames_skipped_before_input"] for r in rows))}
+    out=dict(mat);out["hasValidLabel"]=new_valid
+    return out,rows,audit
+
 def fit_eval(data,fold,model_seed,epochs,adapt_epochs,penalty):
     tr=set(fold["train_object_ids"]); te=set(fold["test_object_ids"])
     if tr&te: raise ValueError("Object leakage")
@@ -131,11 +182,14 @@ def main():
     p.add_argument("--folds",type=int,default=5);p.add_argument("--split-seed",type=int,default=20261119)
     p.add_argument("--sensor-seed",type=int,default=20261116);p.add_argument("--model-seed",type=int,default=20261116)
     p.add_argument("--nodes",type=int,default=96);p.add_argument("--mlp-epochs",type=int,default=50)
+    p.add_argument("--input-mode",choices=["earliest_valid","earliest_consecutive_valid"],default="earliest_valid")
     p.add_argument("--adapt-epochs",type=int,default=5);p.add_argument("--logistic-prior-penalty",type=float,default=1.0)
     p.add_argument("--bootstrap-reps",type=int,default=5000);a=p.parse_args();t0=time.time()
     fixed=json.loads(a.split_manifest.read_text(encoding="utf-8")); manifest,ids=all_object_manifest(fixed)
     reps=make_folds(ids,a.folds,a.repeats,a.split_seed)
-    data,sensors=extract(loadmat(a.metadata,simplify_cells=True),manifest,a.nodes,a.sensor_seed)
+    mat=loadmat(a.metadata,simplify_cells=True)
+    mat,input_rows,input_audit=prepare_input_windows(mat,manifest,a.input_mode,5)
+    data,sensors=extract(mat,manifest,a.nodes,a.sensor_seed)
     if len(data)!=78: raise ValueError("Expected 78 recordings")
     long=[]; fold_summary=[]; repeat_summary=[]; fold_manifest=[]
     for rep in reps:
@@ -173,6 +227,7 @@ def main():
         "n_objects":len(ids),"n_recordings":len(data),"n_repeats":a.repeats,"folds_per_repeat":a.folds,
         "n_outer_fits":a.repeats*a.folds,"held_out_appearances_per_object":a.repeats,
         "nodes":a.nodes,"edges_per_recording":a.nodes*(a.nodes-1)//2,"sensor_seed":a.sensor_seed,
+        "input_mode":a.input_mode,"input_window_audit":input_audit,
         "selected_sensor_flat_indices":sensors,"model_seed":a.model_seed,
         "mlp":{"hidden_layers":[64,32],"alpha":.001,"epochs":a.mlp_epochs,
             "learning_rate_init":.0005,"adapt_epochs":a.adapt_epochs},
@@ -187,6 +242,8 @@ def main():
             "Support/Query permutations reuse recordings; aggregate by object."],
         "runtime_seconds":time.time()-t0}
     (out/"repeated_cv_results.json").write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
+    write_csv(out/"input_window_manifest.csv",input_rows)
+    (out/"input_window_audit.json").write_text(json.dumps(input_audit,ensure_ascii=False,indent=2),encoding="utf-8")
     write_csv(out/"repeated_cv_object_repeat_metrics.csv",long);write_csv(out/"repeated_cv_object_metrics.csv",obj)
     write_csv(out/"repeated_cv_fold_summary.csv",fold_summary);write_csv(out/"repeated_cv_repeat_summary.csv",repeat_summary)
     summary_rows=[]
