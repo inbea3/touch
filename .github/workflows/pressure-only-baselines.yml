@@ -28,5 +28,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_object_episode_splits.py' -v
       - name: Test pressure-only prediction baselines
         run: python -m unittest discover -s tests -p 'test_object_coactivation_baselines.py' -v
+      - name: Test repeated object-level holdout utilities
+        run: python -m unittest discover -s tests -p 'test_repeated_object_holdout.py' -v
       - name: Test repeated object-grouped cross-validation
         run: python -m unittest discover -s tests -p 'test_repeated_object_cv.py' -v
