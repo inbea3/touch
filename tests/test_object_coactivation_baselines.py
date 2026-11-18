@@ -2,7 +2,7 @@ import sys,unittest
 from pathlib import Path
 import numpy as np
 from sklearn.linear_model import LogisticRegression
-sys.path.insert(0,str(Path(__file__).resolve().parent))
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from run_object_coactivation_baselines import corr,stats,adapt_logistic,episodes
 class BaselineTests(unittest.TestCase):
  def test_corr_symmetry_and_diagonal(self):
