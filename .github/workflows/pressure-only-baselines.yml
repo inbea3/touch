@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install model requirements
-        run: python -m pip install numpy scipy scikit-learn
+        run: python -m pip install -r requirements-models.txt
       - name: Test block bootstrap utilities
         run: python -m unittest discover -s scripts -p 'test_coactivation_block_sensitivity.py' -v
       - name: Test object split and Episode utilities
@@ -32,3 +32,5 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_repeated_object_holdout.py' -v
       - name: Test repeated object-grouped cross-validation
         run: python -m unittest discover -s tests -p 'test_repeated_object_cv.py' -v
+      - name: Test Reptile meta-learning and matched MLP baseline
+        run: python -m unittest discover -s tests -p 'test_reptile_meta_learning.py' -v
