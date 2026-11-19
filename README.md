@@ -79,6 +79,8 @@ python scripts/run_repeated_object_holdout.py --metadata data/interim/metadata.m
 python -m unittest discover -s tests -p 'test_repeated_object_holdout.py' -v
 python scripts/run_repeated_object_cv.py --metadata data/interim/metadata.mat --split-manifest results/object_episode_splits/object_split_manifest.json --output-dir results/repeated_object_cv --repeats 5 --folds 5 --split-seed 20261119 --sensor-seed 20261116 --model-seed 20261116 --nodes 96 --mlp-epochs 50 --adapt-epochs 5 --bootstrap-reps 5000
 python -m unittest discover -s tests -p 'test_repeated_object_cv.py' -v
+python -m unittest discover -s tests -p 'test_reptile_meta_learning.py' -v
+python scripts/run_reptile_meta_learning.py --metadata data/interim/metadata.mat --split-manifest results/object_episode_splits/object_split_manifest.json --output-dir results/reptile_meta_learning --nodes 96 --seeds 20261116,20261117,20261118 --meta-iterations 50 --meta-batch-size 4 --inner-steps 5 --inner-lr 0.0005 --outer-step 0.05 --adapt-steps 5 --batch-size 1024 --weight-decay 0.001 --bootstrap-reps 5000
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
