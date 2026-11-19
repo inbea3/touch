@@ -196,5 +196,5 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 数据版本核验：ZIP SHA-256 为 `ce0f27ae87e8ce2ec405f756dfe278b0b8011ef12e9de93e468b7ef31ad76c58`；`metadata.mat` SHA-256 为 `19062ed3415df6e21ae055c5149315a5350652a27d59ab55fed74e395f2f1378`；元数据包含 135,187 帧，pressure-only 字段完整。
 - 公平性审计：两种方法使用同一架构、同一随机种子初始化、同一 Meta-train 物体池和相同梯度更新次数；但 Reptile 按任务 Episode 使用 1/2 条 Support Recording 连续更新，普通 pooled MLP 每步从全部训练 Recording 抽样，因此任务/Recording 访问序列并非严格相同。代码现记录初始化 SHA-256、访问次数和这一差异，不宣称严格数据暴露等价。
 - Smoke test 输出只作为执行诊断；4 个 Meta-validation 物体和单次极短训练不足以支持性能推断。此前未核验的 pilot 数值与对象级结果已删除，不得引用。
-- 下一步按协议执行 27 组超参数敏感性网格（K、inner_lr、outer_step 各 3 个水平），每组 3 个随机种子；只用 Meta-validation 物体级 Query MAE 选参。随后冻结配置，再开展较长训练与报告。
+- 27 组超参数敏感性网格（K、inner_lr、outer_step 各 3 个水平；每组 3 个随机种子）已在 GitHub Actions run `44493070529` 启动，当前等待完成。仅使用 Meta-validation 物体级 Query MAE 选参；随后冻结配置，再开展较长训练与报告。
 - 研究范围继续保持 pressure-only；沿用固定 18/4/4 划分。Meta-validation/Meta-test 均属于探索性评估，不能称为独立确认性测试。原始数据、逐对象/逐 Episode 文件、scaler 和模型权重不上传到公开仓库或 Actions artifacts。
