@@ -1,0 +1,69 @@
+name: Reptile pressure-only real-data smoke test
+
+on:
+  push:
+    branches:
+      - integration/old-research-assets
+    paths:
+      - "scripts/run_reptile_meta_learning.py"
+      - "scripts/run_object_coactivation_baselines.py"
+      - "scripts/download_dataset.py"
+      - "results/object_episode_splits/object_split_manifest.json"
+      - ".github/workflows/reptile-pressure-only-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-data-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-models.txt
+      - name: Install model requirements
+        run: python -m pip install -r requirements-models.txt
+      - name: Download official pressure-only STAG archive
+        run: python scripts/download_dataset.py
+      - name: Extract and audit metadata
+        run: python scripts/audit_dataset.py --archive data/raw/classification_lite.zip --extract-to data/interim
+      - name: Verify fixed object and recording manifest
+        run: python -c "import json; from pathlib import Path; p=json.loads(Path('results/object_episode_splits/object_split_manifest.json').read_text()); assert len(p['object_splits']['meta_train']) == 18; assert len(p['object_splits']['meta_validation']) == 4; assert len(p['object_splits']['meta_test']) == 4; print('Fixed 18/4/4 object split verified')"
+      - name: Run one-iteration real-data smoke test (validation only)
+        run: >-
+          python scripts/run_reptile_meta_learning.py
+          --metadata data/interim/metadata.mat
+          --split-manifest results/object_episode_splits/object_split_manifest.json
+          --output-dir /tmp/reptile-smoke
+          --meta-iterations 1
+          --meta-batch-size 4
+          --inner-steps 2
+          --adapt-steps 1
+          --seeds 20261119
+          --bootstrap-reps 200
+          --device cpu
+      - name: Report smoke-test provenance and aggregate validation output
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path('/tmp/reptile-smoke')
+          summary = json.loads((out / 'run_summary.json').read_text())
+          provenance = json.loads((out / 'provenance.json').read_text())
+          print(json.dumps({
+              'status': 'real_data_smoke_test_completed',
+              'pressure_only': provenance['pressure_only'],
+              'metadata_sha256': provenance['metadata_sha256'],
+              'split_manifest_sha256': provenance['split_manifest_sha256'],
+              'runtime_by_seed': summary['runtime_by_seed'],
+              'validation_summary': summary['validation_summary'],
+              'meta_test_exploratory_summary': None
+          }, ensure_ascii=False, indent=2))
+          PY
