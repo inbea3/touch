@@ -1,6 +1,6 @@
 # 阶段九：Reptile 元学习协议（预注册草案）
 
-> 状态：协议与实现已提交；单元测试和真实数据 smoke test 已通过；完整敏感性网格正在运行。
+> 状态：协议与实现已提交；17 项单元测试、真实数据 smoke test 和 27 组敏感性网格均已通过；最优配置的长程验证正在执行。
 > 数据范围：STAG/HumanGrasp pressure-only。  
 > 代码分支：integration/old-research-assets。
 
@@ -122,7 +122,7 @@ D_i = MAE(i, ordinary fine-tuning) - MAE(i, Reptile fine-tuning)
 - 已提交 `scripts/run_reptile_meta_learning.py` 与 `tests/test_reptile_meta_learning.py`；17 项单元测试已在 GitHub Actions run `44493081143` 中执行通过。
 - 官方 pressure-only 数据已在临时执行环境下载并完成 smoke test：元数据加载、特征提取、Reptile 与 pooled MLP 训练、验证评估和输出文件完整性检查均成功。Smoke 配置只有 1 个种子和 2 次 meta-iterations，不是正式性能实验。
 - 代码记录同种子初始化 SHA-256、梯度更新次数、Reptile task Episode / Support Recording 访问次数及 pooled baseline Recording 抽样次数。两方法梯度步数、初始化和训练物体池匹配，但任务/Recording 访问序列并非严格相同；报告中不得声称严格数据暴露等价。
-- 27 组预先规定的 Meta-validation 超参数网格已在 GitHub Actions run `44493070529` 启动；每组 3 个随机种子。仅按 1-shot/2-shot 等权的物体级 Reptile Support-adapted MAE 选择配置。Meta-test 不参与调参。
+- 27 组预先规定的 Meta-validation 超参数网格已在 GitHub Actions run `44493070529` 完成；每组 3 个随机种子。选择配置为 K=10、α=0.001、ε=0.1。27 组配置的 Reptile 1-shot 与 2-shot MAE 均高于对应普通 pooled MLP。当前追加 200 meta-iterations 的长程验证。Meta-test 不参与调参。
 - Smoke test 的短程指标不用于论文性能结论。此前未核验的 pilot MAE 数值和对象级结果已从仓库移除并作废。
 - 原始压力数据、提取特征、scaler、模型权重、逐 Episode 和逐对象指标仅留在受控临时执行环境，不上传公开仓库或 Actions artifacts。对外报告需引用 STAG 原始论文。
 
