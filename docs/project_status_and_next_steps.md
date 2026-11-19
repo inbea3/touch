@@ -204,5 +204,5 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 首轮真实 pilot：固定 96/548 传感器、18 个 meta-train 物体、4 个 meta-validation 物体；50 个 meta-iterations、meta-batch=4、inner steps=5、inner lr=0.0005、outer step=0.05；3 个随机种子。普通 MLP 与 Reptile 每个种子各执行 1,000 次梯度更新，更新预算匹配。
 - 验证集 1-shot MAE：普通 MLP 微调 0.12448，Reptile 微调 0.14500；2-shot MAE：普通 MLP 微调 0.12392，Reptile 微调 0.14438。4/4 验证物体均未显示 Reptile 优势。
 - 本轮未运行 Meta-test，也未进行超参数搜索。上述结果仅是首轮探索性 pilot，不代表 Reptile 方法在所有设置下无效。
-- 结果、逐 Episode/物体指标、任务采样日志、训练曲线、配置、scaler 和模型权重保存在 `results/reptile_meta_learning/`。
+- GitHub 的 `results/reptile_meta_learning/` 保存 pilot summary、配置、provenance 和物体级指标；完整 Episode/任务采样/训练曲线/scaler/checkpoint 已打包为独立运行产物。
 - 下一步先分析初始化漂移和内循环适应行为，并在 Meta-validation 上做有限超参数敏感性分析；若无稳定增量，不自动升级为 MAML。
