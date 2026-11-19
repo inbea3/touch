@@ -13,8 +13,11 @@ on:
       - "scripts/audit_dataset.py"
       - "results/object_episode_splits/object_split_manifest.json"
       - "requirements-models.txt"
-      - "docs/meta_learning_protocol.md"
   workflow_dispatch:
+
+concurrency:
+  group: reptile-meta-validation-grid-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
