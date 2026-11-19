@@ -191,7 +191,7 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 ## 阶段九最新进度（2026-11-19：200 iteration × 3 seeds 验证已完成）
 
 - 已新增 `scripts/run_reptile_meta_learning.py`：PyTorch 64/32 MLP、一阶 Reptile 参数位移、1-shot/2-shot Support/Query Episode、普通 pooled MLP 对照和物体级评估代码。
-- `tests/test_reptile_meta_learning.py` 现包含 12 项测试。GitHub Actions run `44491690876` 成功，12/12 项 Reptile 单元测试通过。
+- `tests/test_reptile_meta_learning.py` 现包含 15 项测试。GitHub Actions run `44506987171` 成功，Reptile 测试组 15/15 通过；同一回归工作流中的其他阶段测试也全部通过。
 - 真实数据 smoke test：GitHub Actions run `44491723400` 成功；官方 pressure-only `classification_lite.zip` 下载、解压、元数据审查、特征提取、Reptile/普通 MLP 训练、验证评估和产物检查均通过。配置为 1 个随机种子、2 个 meta-iterations、meta-batch=2、inner-steps=2、1 个适应步，仅验证管线，不用于模型优劣结论。
 - 数据版本核验：ZIP SHA-256 为 `ce0f27ae87e8ce2ec405f756dfe278b0b8011ef12e9de93e468b7ef31ad76c58`；`metadata.mat` SHA-256 为 `19062ed3415df6e21ae055c5149315a5350652a27d59ab55fed74e395f2f1378`；元数据包含 135,187 帧，pressure-only 字段完整。
 - 公平性审计：两种方法使用同一架构、同一随机种子初始化、同一 Meta-train 物体池和相同梯度更新次数；但 Reptile 按任务 Episode 使用 1/2 条 Support Recording 连续更新，普通 pooled MLP 每步从全部训练 Recording 抽样，因此任务/Recording 访问序列并非严格相同。代码现记录初始化 SHA-256、访问次数和这一差异，不宣称严格数据暴露等价。
@@ -203,5 +203,9 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 四个 Meta-validation 物体上，Reptile Support-adapted MAE：1-shot 0.12587、2-shot 0.12454；Support-matched MLP：1-shot 0.12332、2-shot 0.12273；普通 pooled MLP：1-shot 0.12443、2-shot 0.12356。Reptile 未显示 MAE 优势；其平均 Spearman 略高，但 MAE/RMSE 较差。对象级 bootstrap 的独立单位 n=4，结果仅作探索性描述，不能作为确认性显著性结论。
 - 训练公平性：三种方法每个 seed 均为 8,000 次梯度更新、同一模型架构和同一 seed 初始化哈希。Support-matched MLP 精确复用 Reptile 的任务与 Support Recording 调度；ordinary pooled MLP 的 Recording 访问策略不同，因此仅作为辅助基准。
 - 详细数值、区间、配置、限制和复现文件清单见 `results/reptile_meta_learning/selected_validation_200x3_20261119.md`。
-- 已完成诊断报告：`results/reptile_meta_learning/diagnostic_analysis_200x3_20261119.md`。当前首要问题为 Reptile 训练内循环（10 步、1024 行随机小批量）与验证适应（5 步、全 Support 批量）不一致；同时观察到适应普遍可能损害泛化，且 object 6 对总体差异影响较大。任务异质性仍未被直接证实。下一步优先做适应算子对齐和 0/1/2/5/10/20 步适应曲线，不立即启动新一轮完整训练或 MAML。
-- 研究范围继续保持 pressure-only；沿用固定 18/4/4 划分。Meta-validation/Meta-test 均属于探索性评估，不能称为独立确认性测试。原始数据、逐对象/逐 Episode 文件、scaler 和模型权重不上传到公开仓库或 Actions artifacts。
+- 已完成 A/B/C 三组诊断：GitHub Actions run `44506987275` 成功，复用原 200×3 checkpoint 与 train-only scaler，未重新训练。Artifact `reptile-diagnostics-44506987275-1`（SHA-256 `3a0709587348ddd83cd1a8fa222c9bba6bc1a89fd022e57bf37009001e6849bb`）包含适应曲线、物体级结果、任务位移余弦及汇总文件，保留至 2026-12-19。
+- 适应步数诊断：Reptile 1-shot MAE 随 full-batch steps 从 0 到 20 单调上升（0.12323→0.12795）；2-shot 在 0 steps 为 0.12323，所有测试步数均未优于零样本。Support-matched MLP 在 1–2 步略有改善，之后恶化；Ordinary MLP 在 0–1 步最好。结果支持适应过度/Support 特异拟合风险，但四个验证物体不足以作确认性推断。
+- 适应算子诊断：10 步 training-style minibatch 相比 10 步 full-batch，Reptile 1-shot MAE 仅改善 0.00065，2-shot 几乎不变（差异 +0.00004）。因此原训练/验证算子不一致确实存在，但不是解释当前 MAE 劣势的充分原因。
+- 任务位移方向诊断：18 个 Meta-train 物体的平均 pairwise cosine，1-shot 为 0.2544、2-shot 为 0.2085；负余弦比例分别为 8.9% 和 13.9%。任务更新整体偏正向且仅中等对齐，不支持“广泛严重梯度冲突”的说法；物体异质性仍可能存在，但尚未证明是主因。
+- 修订后的完整诊断结论见 `results/reptile_meta_learning/diagnostic_analysis_200x3_20261119.md`。当前不建议立即启动 MAML/ANIL 或再跑大规模超参数搜索；下一步应预先规定一个小规模 validation-only 适应策略比较，重点对照 zero-shot、1-step、2-step，并保持 Query Recording 固定。
+- 研究范围继续保持 pressure-only；沿用固定 18/4/4 划分。Meta-validation/Meta-test 均属于探索性评估，不能称为独立确认性测试。公开仓库和 Actions Artifact 不包含原始 STAG 压力帧；Artifact 中包含可复现诊断所需的模型 checkpoint、train-only scaler、配置、逐 Episode/物体诊断指标及数据审计摘要。
