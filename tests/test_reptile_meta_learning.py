@@ -185,16 +185,17 @@ class ReptileMetaLearningTests(unittest.TestCase):
     def test_paired_summary_compares_both_full_data_and_support_matched_baselines(self):
         rows = []
         for oid in (1, 2, 3, 4):
-            for model, mae in (
-                ("ordinary_mlp_support_adapted", 0.12 + oid * .001),
-                ("support_matched_mlp_support_adapted", 0.13 + oid * .001),
-                ("reptile_support_adapted", 0.125 + oid * .001),
-            ):
-                rows.append({"split": "meta_validation", "object_id": oid,
-                             "shots": 1, "model": model, "mae": mae,
-                             "rmse": mae + .02, "spearman": .3})
+            for shots in (1, 2):
+                for model, mae in (
+                    ("ordinary_mlp_support_adapted", 0.12 + oid * .001),
+                    ("support_matched_mlp_support_adapted", 0.13 + oid * .001),
+                    ("reptile_support_adapted", 0.125 + oid * .001),
+                ):
+                    rows.append({"split": "meta_validation", "object_id": oid,
+                                 "shots": shots, "model": model, "mae": mae,
+                                 "rmse": mae + .02, "spearman": .3})
         result = summarize(rows, seed=5, n_boot=100)
-        self.assertEqual(len(result["paired_mae"]), 2)
+        self.assertEqual(len(result["paired_mae"]), 4)
         baselines = {row["baseline_model"] for row in result["paired_mae"]}
         self.assertEqual(baselines, {
             "ordinary_mlp_support_adapted",
