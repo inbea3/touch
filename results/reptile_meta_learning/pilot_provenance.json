@@ -11,5 +11,12 @@
   "pressure_only": true,
   "video_used": false,
   "code_commit": "1734e559d77ad59eacdd3f6562cc97a27ab56697",
-  "unit_tests": "11/11 passed"
+  "unit_tests": "not run",
+  "status": "data_integrity_verified_only",
+  "archive_integrity_verified": true,
+  "metadata_integrity_verified": true,
+  "model_training_executed": false,
+  "unit_tests_executed": false,
+  "experiment_results": "none; prior manually recorded pilot metrics were unverified and removed",
+  "execution_environment_note": "ZIP and MAT-file hashes/structure were checked locally; repository source has not yet been deployed into an executable local checkout"
 }
