@@ -1,0 +1,82 @@
+{
+  "stage": "G1 exploratory architecture pilot",
+  "status": "completed_one_repeat_5fold_grouped_object_cv",
+  "scope": "STAG pressure-only; legacy random 96/548 sensor subset; future continuous Pearson correlation",
+  "protocol": {
+    "n_objects": 26,
+    "n_recordings": 78,
+    "n_nodes": 96,
+    "unordered_edges_per_recording": 4560,
+    "sensor_seed": 20261116,
+    "split_seed": 20261119,
+    "epochs": 10,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0005,
+    "weight_decay": 0.001,
+    "all_objects_held_out_once": true,
+    "scalers_fit_on_training_objects_only": true,
+    "node_mlp_gnn_parameterization": "same trainable weights and initialization; only adjacency differs"
+  },
+  "metrics": {
+    "Edge-MLP": {
+      "mae": 0.1171869007,
+      "rmse": 0.1538445499,
+      "spearman": 0.3470456041
+    },
+    "Node-MLP": {
+      "mae": 0.1152751875,
+      "rmse": 0.1515616997,
+      "spearman": 0.3900530812
+    },
+    "Spatial-GNN k4": {
+      "mae": 0.1154310331,
+      "rmse": 0.1517948167,
+      "spearman": 0.3834648859
+    },
+    "Spatial-GNN k6": {
+      "mae": 0.115683141,
+      "rmse": 0.1519586754,
+      "spearman": 0.3820810709
+    },
+    "Spatial-GNN k8": {
+      "mae": 0.1157151159,
+      "rmse": 0.1518574471,
+      "spearman": 0.3812347525
+    }
+  },
+  "paired_mae_gnn_minus_node_mlp": {
+    "k4": {
+      "mean": 0.0001558456,
+      "ci95": [
+        -0.0001812049,
+        0.0005195762
+      ],
+      "gnn_better_objects": 11,
+      "node_mlp_better_objects": 15
+    },
+    "k6": {
+      "mean": 0.0004079536,
+      "ci95": [
+        0.0000369139,
+        0.0008074048
+      ],
+      "gnn_better_objects": 11,
+      "node_mlp_better_objects": 15
+    },
+    "k8": {
+      "mean": 0.0004399284,
+      "ci95": [
+        0.0000151483,
+        0.000895008
+      ],
+      "gnn_better_objects": 11,
+      "node_mlp_better_objects": 15
+    }
+  },
+  "limitations": [
+    "One 5-fold repeat only; exploratory, not confirmatory.",
+    "Only the legacy random 96-node subset; full 548-node topology not yet tested.",
+    "Fixed 10-epoch pilot budget; no validation tuning.",
+    "No rewired-graph control or few-shot adaptation."
+  ]
+}
