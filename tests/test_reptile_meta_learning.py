@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from run_reptile_meta_learning import (
     EdgeMLP, sample_episode, support_batch_loss, full_support_loss,
-    apply_reptile_update, train_reptile, train_pooled_mlp, adapt_model,
+    apply_reptile_update, train_reptile, train_pooled_mlp, train_support_matched_mlp, adapt_model,
     build_tasks, aggregate_by_object, aggregate_seeds_by_object,
     validate_manifest, set_seed, initial_model_sha256,
 )
@@ -104,6 +104,49 @@ class ReptileMetaLearningTests(unittest.TestCase):
         b = initial_model_sha256(2026, 5, torch.device("cpu"))
         self.assertEqual(a, b)
         self.assertEqual(len(a), 64)
+
+    def test_support_matched_baseline_replays_exact_episode_support_schedule(self):
+        data = synthetic_data(n_objects=3)
+        tasks = build_tasks(data, "meta_train")
+        task_log = []
+        for oid in (1, 2):
+            support = tasks[oid][:2]
+            query = tasks[oid][2:]
+            task_log.append({
+                "seed": 13, "iteration": 1, "meta_batch_slot": oid,
+                "object_id": oid, "shots": 2,
+                "support_recording_ids": ";".join(map(str, support)),
+                "query_recording_ids": ";".join(map(str, query)),
+                "query_used_for_gradient": False,
+            })
+        model, trace, _ = train_support_matched_mlp(
+            data, task_log, 4, seed=13, inner_steps=2, inner_lr=1e-2,
+            batch_size=8, weight_decay=0.0, device=torch.device("cpu"))
+        self.assertEqual(len(trace), len(task_log) * 2)
+        self.assertEqual([r["gradient_step"] for r in trace], [1, 2, 3, 4])
+        for episode_index, task in enumerate(task_log, start=1):
+            episode_rows = [r for r in trace if r["episode_index"] == episode_index]
+            self.assertEqual(len(episode_rows), 2)
+            self.assertTrue(all(r["support_recording_ids"] == task["support_recording_ids"] for r in episode_rows))
+            self.assertFalse(set(map(int, task["support_recording_ids"].split(";"))) &
+                             set(map(int, task["query_recording_ids"].split(";"))))
+        self.assertEqual(trace[0]["initialization_sha256"],
+                         initial_model_sha256(13, 4, torch.device("cpu")))
+
+    def test_support_matched_baseline_uses_same_gradient_budget_as_reptile(self):
+        data = synthetic_data(n_objects=3)
+        tasks = build_tasks(data, "meta_train")
+        task_log = []
+        for oid in (1, 2, 3):
+            task_log.append({
+                "object_id": oid,
+                "support_recording_ids": str(tasks[oid][0]),
+                "query_recording_ids": ";".join(map(str, tasks[oid][1:])),
+            })
+        _, trace, _ = train_support_matched_mlp(
+            data, task_log, 4, seed=17, inner_steps=3, inner_lr=1e-2,
+            batch_size=8, weight_decay=0.0, device=torch.device("cpu"))
+        self.assertEqual(len(trace), 3 * 3)
 
     def test_pooled_baseline_gradient_budget_is_explicit(self):
         data = synthetic_data(n_objects=3)
