@@ -59,7 +59,7 @@
     "interpretation": "exploratory negative result; selected configuration remains slightly worse than ordinary MLP"
   },
   "longer_selected_config_validation": {
-    "status": "queued_or_running",
+    "status": "running",
     "meta_iterations": 200,
     "seeds": [
       20261116,
@@ -68,6 +68,8 @@
     ],
     "inner_steps": 10,
     "inner_lr": 0.001,
-    "outer_step": 0.1
+    "outer_step": 0.1,
+    "workflow_run_id": 44494923410,
+    "workflow_url": "https://github.com/inbea3/touch/actions/runs/44494923410"
   }
 }
