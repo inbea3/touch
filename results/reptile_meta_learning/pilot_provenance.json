@@ -1,0 +1,15 @@
+{
+  "archive_file": "classification_lite.zip",
+  "archive_sha256": "ce0f27ae87e8ce2ec405f756dfe278b0b8011ef12e9de93e468b7ef31ad76c58",
+  "metadata_file": "metadata.mat",
+  "metadata_sha256": "19062ed3415df6e21ae055c5149315a5350652a27d59ab55fed74e395f2f1378",
+  "split_manifest_git_blob_sha": "4320d71c77d18383f8130a483565e43c5e379b29",
+  "split_manifest_source_ref": "inbea3/touch@integration/old-research-assets:results/object_episode_splits/object_split_manifest.json",
+  "sensor_seed": 20261116,
+  "split_seed": 20261118,
+  "feature_source": "scripts/run_object_coactivation_baselines.py::extract",
+  "pressure_only": true,
+  "video_used": false,
+  "code_commit": "1734e559d77ad59eacdd3f6562cc97a27ab56697",
+  "unit_tests": "10/10 passed"
+}
