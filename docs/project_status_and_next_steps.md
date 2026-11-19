@@ -203,4 +203,5 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 四个 Meta-validation 物体上，Reptile Support-adapted MAE：1-shot 0.12587、2-shot 0.12454；Support-matched MLP：1-shot 0.12332、2-shot 0.12273；普通 pooled MLP：1-shot 0.12443、2-shot 0.12356。Reptile 未显示 MAE 优势；其平均 Spearman 略高，但 MAE/RMSE 较差。对象级 bootstrap 的独立单位 n=4，结果仅作探索性描述，不能作为确认性显著性结论。
 - 训练公平性：三种方法每个 seed 均为 8,000 次梯度更新、同一模型架构和同一 seed 初始化哈希。Support-matched MLP 精确复用 Reptile 的任务与 Support Recording 调度；ordinary pooled MLP 的 Recording 访问策略不同，因此仅作为辅助基准。
 - 详细数值、区间、配置、限制和复现文件清单见 `results/reptile_meta_learning/selected_validation_200x3_20261119.md`。
+- 已完成诊断报告：`results/reptile_meta_learning/diagnostic_analysis_200x3_20261119.md`。当前首要问题为 Reptile 训练内循环（10 步、1024 行随机小批量）与验证适应（5 步、全 Support 批量）不一致；同时观察到适应普遍可能损害泛化，且 object 6 对总体差异影响较大。任务异质性仍未被直接证实。下一步优先做适应算子对齐和 0/1/2/5/10/20 步适应曲线，不立即启动新一轮完整训练或 MAML。
 - 研究范围继续保持 pressure-only；沿用固定 18/4/4 划分。Meta-validation/Meta-test 均属于探索性评估，不能称为独立确认性测试。原始数据、逐对象/逐 Episode 文件、scaler 和模型权重不上传到公开仓库或 Actions artifacts。
