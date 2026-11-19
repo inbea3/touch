@@ -67,10 +67,10 @@ jobs:
           out = Path("/tmp/reptile-smoke")
           required = [
               "config.json", "run_summary.json", "task_sampling.csv",
-              "reptile_training_trace.csv", "ordinary_training_trace.csv",
+              "reptile_training_trace.csv", "ordinary_training_trace.csv", "support_matched_training_trace.csv",
               "episode_metrics.csv", "object_seed_metrics.csv",
               "object_metrics.csv", "feature_scaler.npz", "provenance.json",
-              "reptile_seed_20261116.pt", "ordinary_mlp_seed_20261116.pt",
+              "reptile_seed_20261116.pt", "support_matched_mlp_seed_20261116.pt", "ordinary_mlp_seed_20261116.pt",
           ]
           missing = [name for name in required if not (out / name).is_file() or (out / name).stat().st_size == 0]
           if missing:
@@ -81,7 +81,8 @@ jobs:
           assert summary["meta_test_objects"] == 0
           runtime = summary["runtime_by_seed"]["20261116"]
           assert runtime["gradient_update_budget_matched"] is True
-          assert runtime["same_initialization_verified_by_seeded_constructor"] is True
+          assert runtime["same_initialization_verified_by_state_hash"] is True
+          assert runtime["support_matched_task_and_recording_access_match"] is True
           assert runtime["strict_task_and_recording_access_match"] is False
           validation = summary["validation_summary"]
           aggregate_only = {
