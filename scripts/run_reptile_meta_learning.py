@@ -58,6 +58,23 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def model_state_sha256(model: torch.nn.Module) -> str:
+    """Stable hash of tensor names, shapes, dtypes and values."""
+    digest = hashlib.sha256()
+    for name, tensor in sorted(model.state_dict().items()):
+        value = tensor.detach().cpu().contiguous()
+        digest.update(name.encode("utf-8"))
+        digest.update(str(tuple(value.shape)).encode("ascii"))
+        digest.update(str(value.dtype).encode("ascii"))
+        digest.update(value.numpy().tobytes())
+    return digest.hexdigest()
+
+
+def initial_model_sha256(seed: int, n_features: int, device: torch.device) -> str:
+    set_seed(seed)
+    return model_state_sha256(EdgeMLP(n_features).to(device))
+
+
 def validate_manifest(manifest: dict) -> dict[int, dict]:
     if "object_splits" not in manifest:
         raise ValueError("Split manifest missing object_splits")
@@ -414,6 +431,8 @@ def run(args) -> dict:
     all_episode_rows, all_task_rows, all_reptile_trace, all_pooled_trace = [], [], [], []
     runtime = {}
     for seed in args.seeds:
+        init_hash = initial_model_sha256(seed, n_features, device)
+        print(f"[seed {seed}] common_initialization_sha256={init_hash}", flush=True)
         print(f"[seed {seed}] training Reptile", flush=True)
         reptile, task_log, reptile_trace, reptile_seconds = train_reptile(
             data, train_tasks, n_features, seed, args.meta_iterations, args.meta_batch_size,
@@ -438,11 +457,23 @@ def run(args) -> dict:
             "method": "Reptile", "config": vars(args)}, output_dir / f"reptile_seed_{seed}.pt")
         torch.save({"seed": seed, "state_dict": ordinary.state_dict(), "n_features": n_features,
             "method": "ordinary_pooled_mlp", "config": vars(args)}, output_dir / f"ordinary_mlp_seed_{seed}.pt")
-        runtime[str(seed)] = {"reptile_training_seconds": reptile_seconds,
+        reptile_support_draws = sum(
+            len(row["support_recording_ids"].split(";")) for row in task_log
+        )
+        runtime[str(seed)] = {
+            "reptile_training_seconds": reptile_seconds,
             "ordinary_training_seconds": pooled_seconds,
+            "initialization_sha256_shared_by_both_methods": init_hash,
+            "reptile_meta_task_episodes": len(task_log),
+            "reptile_support_recording_draws": reptile_support_draws,
+            "ordinary_object_recording_draws": len(pooled_trace),
             "reptile_inner_gradient_updates": total_updates,
             "ordinary_gradient_updates": total_updates,
-            "gradient_update_budget_matched": True}
+            "gradient_update_budget_matched": True,
+            "same_initialization_verified_by_seeded_constructor": True,
+            "same_meta_train_object_pool": True,
+            "strict_task_and_recording_access_match": False,
+        }
         print(f"[seed {seed}] validation episodes={len(val_rows)}", flush=True)
     object_seed_rows = aggregate_by_object(all_episode_rows)
     object_rows = aggregate_seeds_by_object(object_seed_rows)
@@ -466,10 +497,21 @@ def run(args) -> dict:
             "task_sampling": "uniform over meta-train objects without replacement within each meta-batch; 1/2-shot sampled uniformly",
             "inner_loss": "equal mean of per-Recording MSE; each Recording minibatch receives equal weight",
             "query_used_for_meta_gradient": False},
-        "ordinary_baseline": {"training": "pooled MLP; object then Recording sampled uniformly per gradient step",
+        "ordinary_baseline": {
+            "training": "pooled MLP; object then Recording sampled uniformly per gradient step",
             "gradient_updates_per_seed": args.meta_iterations*args.meta_batch_size*args.inner_steps,
-            "same_architecture_and_optimizer": True, "same_training_objects": True,
-            "same_gradient_update_count": True},
+            "same_architecture_and_optimizer": True,
+            "same_training_objects": True,
+            "same_seeded_initialization": True,
+            "same_gradient_update_count": True,
+            "strict_recording_access_match": False,
+            "access_difference": (
+                "Reptile samples one object Episode and performs K updates on its 1/2 Support "
+                "Recordings; pooled MLP draws one object/Recording per gradient step from all "
+                "three Meta-train Recordings. Gradient steps and initialization are matched, "
+                "but task-episode and recording-access schedules are not identical."
+            ),
+        },
         "adaptation": {"steps": args.adapt_steps, "optimizer": "Adam", "learning_rate": args.inner_lr,
             "same_support_recordings_and_budget_for_both_initializations": True},
         "seeds": args.seeds, "runtime_by_seed": runtime,
