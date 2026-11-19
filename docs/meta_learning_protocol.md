@@ -116,7 +116,7 @@ D_i = MAE(i, ordinary fine-tuning) - MAE(i, Reptile fine-tuning)
 ## 11. 实现与真实数据 pilot 状态
 
 - 已实现 `scripts/run_reptile_meta_learning.py`，采用 PyTorch 64/32 MLP 和一阶 Reptile 参数位移更新。
-- 已新增 `tests/test_reptile_meta_learning.py`；10 项单元测试全部通过。
+- 已新增 `tests/test_reptile_meta_learning.py`；11 项单元测试全部通过。
 - 真实数据来源为此前上传的 `classification_lite.zip`，ZIP 完整性检查通过，提取的 `metadata.mat` 用于真实 pressure-only 特征构造与训练。
 - 普通 MLP 与 Reptile 使用相同随机初始化、网络结构、meta-train 物体、Adam 学习率/weight decay 和每个种子的总梯度更新次数；评估时使用相同 Support Recording、适应步数和优化器。
 - Reptile 任务采样以物体均匀抽样；Support 内每条 Recording 的 MSE 等权，任务参数位移在 meta-batch 内等权平均。Query Recording 不参与内循环或外循环更新。
