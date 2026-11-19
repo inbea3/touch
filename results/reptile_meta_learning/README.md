@@ -1,18 +1,30 @@
-# Stage 9 Reptile implementation status
+# Stage 9 Reptile implementation and smoke-test status
 
-This directory currently stores the proposed pilot configuration and data provenance checks only. **No Reptile training run has been executed and no performance result is available.**
+## Verified execution
 
-- `pilot_config.json`: planned smoke/pilot settings; not an executed run record.
-- `pilot_provenance.json`: archive and extracted MAT-file integrity hashes verified locally; it explicitly records that model training and tests have not been run.
+- The original 11 Reptile unit tests ran successfully in GitHub Actions run `44489577047`.
+- A twelfth test was added for deterministic initialization fingerprints; its CI result is pending at the time of this commit.
+- A real-data pressure-only smoke test completed successfully in GitHub Actions run `44490737087`. It downloaded the official lite archive, extracted and audited `metadata.mat`, built the 96-sensor features, trained Reptile and the pooled MLP baseline, evaluated the four Meta-validation objects, and verified that all expected output files were created.
+- Smoke settings were intentionally minimal: one seed, two meta-iterations, meta-batch 2, two inner steps, and one adaptation step. These outputs are pipeline diagnostics only; they are not a model-performance result and must not be cited as evidence for or against Reptile.
 
-Earlier unverified pilot summary and object-metric files were removed. Do not cite or use the previously circulated MAE values.
+## Fair-comparison audit
 
-Before a valid run can be recorded:
-1. Obtain a local checkout of `integration/old-research-assets`.
-2. Install and record dependencies.
-3. Run syntax checks and all 11 unit tests.
-4. Run a real-data smoke test against the supplied pressure-only `metadata.mat`.
-5. Audit the matched MLP/Reptile initialization, data exposure and gradient/compute budgets.
-6. Only then run the multi-seed Meta-validation experiment and save actual logs, checkpoints, task samples, episode/object metrics, scaler and hashes.
+Both methods use the same MLP architecture, seeded initialization, Meta-train object pool, and gradient-update count. Their task/recording access schedules are not identical: Reptile samples task Episodes and performs multiple inner updates on the 1/2 Support Recordings, while the pooled MLP samples one object/Recording per gradient step across all three Meta-train Recordings. The implementation records this difference and does not claim strict data-exposure equivalence.
 
-The fixed 18/4/4 object split has been used in prior stages. Any future Meta-validation/Meta-test result on it remains exploratory, not an untouched confirmatory evaluation.
+## Next experiment
+
+The next pre-specified step is a 27-configuration Meta-validation sensitivity grid:
+- inner steps: 1, 5, 10
+- inner learning rate: 1e-4, 5e-4, 1e-3
+- Reptile outer step: 0.01, 0.05, 0.1
+- meta-batch: 4
+- three fixed random seeds per configuration
+- 50 meta-iterations per seed
+
+Selection will use only the equally weighted average of 1-shot and 2-shot object-level Reptile Support-adapted MAE on the four Meta-validation objects. Meta-test is excluded from tuning and remains exploratory because all 26 objects were used in earlier stages.
+
+## Data handling and citation
+
+Raw pressure data, extracted features, scalers, checkpoints, and detailed per-Episode/per-object outputs remain in the temporary execution environment. They are not committed to this public repository or uploaded as Actions artifacts.
+
+Subramanian Sundaram, Petr Kellnhofer, Yunzhu Li, Jun-Yan Zhu, Antonio Torralba, and Wojciech Matusik. “Learning the signatures of the human grasp using a scalable tactile glove.” *Nature*, 2019. DOI: 10.1038/s41586-019-1234-z.
