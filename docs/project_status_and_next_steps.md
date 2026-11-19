@@ -186,3 +186,11 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 已验证完整 548 传感器阵列性能；
 - 已验证真实物理协同机制或因果关系；
 - 已获得对所有日常物体的普遍泛化保证。
+
+
+## 阶段九最新进度（2026-11-19）
+
+- 已审查 scripts/ 与 tests/：当前分支没有 Reptile、ANIL、MAML 实现；现有预测基线为 sklearn MLPRegressor，使用 64/32 隐藏层和 Support partial_fit。
+- 已新增 docs/meta_learning_protocol.md，明确 Reptile 一阶参数位移、任务/Recording/边的层级、任务等权损失、同结构普通 MLP 微调对照、验证边界、评价指标和停止规则。
+- 真实元学习代码、单元测试、smoke test 与正式实验尚未完成。当前连接可读写 GitHub 文件，但本仓库未提供可直接读取的 metadata.mat；因此不能在此声称已完成真实数据训练。
+- 下一步：按该协议实现 PyTorch Reptile 与匹配的 pooled MLP fine-tuning 对照，并增加 synthetic unit tests；随后需要本地 metadata.mat 执行真实数据 smoke test。
