@@ -12,7 +12,7 @@ Both methods use the same MLP architecture, seeded initialization, Meta-train ob
 
 ## Current experiment
 
-The 27-configuration Meta-validation sensitivity grid has been launched in GitHub Actions run `44493070529`; it is currently running. It is configured as follows:
+The 27-configuration Meta-validation sensitivity grid completed successfully in GitHub Actions run `44493070529`. Aggregate-only results are saved in [`sensitivity_grid_summary.json`](sensitivity_grid_summary.json) and [`sensitivity_grid_summary.csv`](sensitivity_grid_summary.csv).
 - inner steps: 1, 5, 10
 - inner learning rate: 1e-4, 5e-4, 1e-3
 - Reptile outer step: 0.01, 0.05, 0.1
@@ -20,7 +20,9 @@ The 27-configuration Meta-validation sensitivity grid has been launched in GitHu
 - three fixed random seeds per configuration
 - 50 meta-iterations per seed
 
-Selection will use only the equally weighted average of 1-shot and 2-shot object-level Reptile Support-adapted MAE on the four Meta-validation objects. Meta-test is excluded from tuning and remains exploratory because all 26 objects were used in earlier stages.
+The selected configuration was K=10, inner LR=0.001, outer step=0.1, with equal-shot mean Reptile MAE 0.128356. For this selected cell, ordinary MLP's equal-shot mean MAE was 0.124438. Across all 27 configurations, Reptile's adapted MAE was higher than ordinary MLP in both 1-shot and 2-shot settings. This is an exploratory negative result, not a universal rejection of meta-learning.
+
+A longer 200-meta-iteration run of the selected configuration is now queued to check whether the result is merely due to short meta-training. Meta-test is excluded from tuning and remains exploratory because all 26 objects were used in earlier stages.
 
 ## Data handling and citation
 
