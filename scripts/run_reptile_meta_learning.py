@@ -554,6 +554,7 @@ def run(args) -> dict:
                 len(support_trace) == total_updates and support_matched_draws == reptile_support_draws
             ),
             "full_data_pool_strict_task_and_recording_access_match": False,
+            "strict_task_and_recording_access_match": False,
         }
         print(f"[seed {seed}] validation evaluations={len(val_rows)}", flush=True)
     object_seed_rows = aggregate_by_object(all_episode_rows)
