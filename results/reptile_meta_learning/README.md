@@ -2,9 +2,8 @@
 
 ## Verified execution
 
-- The original 11 Reptile unit tests ran successfully in GitHub Actions run `44489577047`.
-- A twelfth test was added for deterministic initialization fingerprints; its CI result is pending at the time of this commit.
-- A real-data pressure-only smoke test completed successfully in GitHub Actions run `44490737087`. It downloaded the official lite archive, extracted and audited `metadata.mat`, built the 96-sensor features, trained Reptile and the pooled MLP baseline, evaluated the four Meta-validation objects, and verified that all expected output files were created.
+- All 12 Reptile unit tests ran successfully in GitHub Actions run `44491690876`.
+- A real-data pressure-only smoke test completed successfully in GitHub Actions run `44491723400`. It downloaded the official lite archive, extracted and audited `metadata.mat`, built the 96-sensor features, trained Reptile and the pooled MLP baseline, evaluated the four Meta-validation objects, and verified that all expected output files were created.
 - Smoke settings were intentionally minimal: one seed, two meta-iterations, meta-batch 2, two inner steps, and one adaptation step. These outputs are pipeline diagnostics only; they are not a model-performance result and must not be cited as evidence for or against Reptile.
 
 ## Fair-comparison audit
