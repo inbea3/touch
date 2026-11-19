@@ -10,8 +10,8 @@
   "feature_source": "scripts/run_object_coactivation_baselines.py::extract",
   "pressure_only": true,
   "video_used": false,
-  "code_commit": "4f93591554dc79f1c2dca6f7dcdb99fbd0bd7575",
-  "unit_tests": "11/11 passed in GitHub Actions run 44489577047; initialization-hash test added afterward and awaiting latest CI",
+  "code_commit": "e03a45ab9cc297db182d66b27f336be09606a41a",
+  "unit_tests": "12/12 passed in GitHub Actions run 44491690876",
   "status": "real_data_smoke_test_passed_full_experiment_pending",
   "archive_integrity_verified": true,
   "metadata_integrity_verified": true,
@@ -21,7 +21,7 @@
   "execution_environment_note": "Executed in ephemeral GitHub Actions runner; raw data, extracted features, checkpoints, scaler and detailed result files were not uploaded as artifacts or committed.",
   "real_data_smoke_test_executed": true,
   "real_data_smoke_test": {
-    "workflow_run_id": 44490737087,
+    "workflow_run_id": 44491723400,
     "seed": 20261116,
     "meta_iterations": 2,
     "meta_batch_size": 2,
@@ -30,9 +30,14 @@
     "outer_step": 0.05,
     "adapt_steps": 1,
     "include_meta_test": false,
-    "result_use": "pipeline diagnostic only; not performance evidence"
+    "result_use": "pipeline diagnostic only; not performance evidence",
+    "code_commit": "e03a45ab9cc297db182d66b27f336be09606a41a"
   },
   "full_sensitivity_grid_executed": false,
   "full_multi_seed_experiment_executed": false,
-  "confirmatory_evaluation": false
+  "confirmatory_evaluation": false,
+  "unit_test_run_id": 44491690876,
+  "initialization_sha256": "8a023689716a581df3e62e56b95d7e576839815f5155186ad40e9c4dfbcdee79",
+  "strict_task_and_recording_access_match": false,
+  "gradient_update_budget_matched": true
 }
