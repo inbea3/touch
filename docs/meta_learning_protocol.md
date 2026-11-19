@@ -1,6 +1,6 @@
 # 阶段九：Reptile 元学习协议（预注册草案）
 
-> 状态：协议草案，尚未运行真实数据元学习实验。  
+> 状态：协议与实现已提交；单元测试和真实数据 smoke test 已通过；完整敏感性网格正在运行。
 > 数据范围：STAG/HumanGrasp pressure-only。  
 > 代码分支：integration/old-research-assets。
 
