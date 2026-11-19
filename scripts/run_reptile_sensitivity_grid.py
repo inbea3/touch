@@ -88,6 +88,7 @@ def run_grid(args) -> dict:
     script_path = Path(__file__).with_name("run_reptile_meta_learning.py")
     seeds_arg = ",".join(str(s) for s in args.seeds)
     rows = []
+    data_provenance = None
     configs = build_grid()
     print(f"Starting {len(configs)} pre-specified configurations", flush=True)
 
@@ -128,6 +129,11 @@ def run_grid(args) -> dict:
         if not summary_path.is_file():
             raise FileNotFoundError(f"Missing run summary: {summary_path}")
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        provenance = json.loads((out / "provenance.json").read_text(encoding="utf-8"))
+        if data_provenance is None:
+            data_provenance = provenance
+        elif provenance != data_provenance:
+            raise ValueError("Data/feature provenance changed across grid configurations")
         if summary["seeds"] != list(args.seeds):
             raise ValueError("Run summary seed list does not match the pre-specified seeds")
         row = summarize_run(summary, config)
@@ -161,6 +167,7 @@ def run_grid(args) -> dict:
             "selection_score_equal_shot_mae": best["selection_score_equal_shot_mae"],
         },
         "configuration_rows": rows,
+        "data_provenance": data_provenance,
         "github_sha": os.environ.get("GITHUB_SHA"),
         "data_artifact_policy": (
             "Raw data, extracted features, model checkpoints, scalers and detailed "
@@ -176,6 +183,8 @@ def run_grid(args) -> dict:
         "n_configurations": len(rows),
         "selected_configuration": result["selected_configuration"],
         "selection_rule": result["selection_rule"],
+        "data_provenance": data_provenance,
+        "configuration_rows_aggregate_only": rows,
     }, ensure_ascii=False, indent=2), flush=True)
     print("SENSITIVITY_GRID_AGGREGATE_ONLY_END", flush=True)
     return result
