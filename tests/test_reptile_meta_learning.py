@@ -12,7 +12,7 @@ from run_reptile_meta_learning import (
     EdgeMLP, sample_episode, support_batch_loss, full_support_loss,
     apply_reptile_update, train_reptile, train_pooled_mlp, adapt_model,
     build_tasks, aggregate_by_object, aggregate_seeds_by_object,
-    validate_manifest, set_seed,
+    validate_manifest, set_seed, initial_model_sha256,
 )
 
 
@@ -98,6 +98,12 @@ class ReptileMetaLearningTests(unittest.TestCase):
         set_seed(2026)
         reptile_init = EdgeMLP(5).state_dict()
         self.assertTrue(all(torch.equal(ordinary_init[k], reptile_init[k]) for k in ordinary_init))
+
+    def test_initialization_hash_is_reproducible(self):
+        a = initial_model_sha256(2026, 5, torch.device("cpu"))
+        b = initial_model_sha256(2026, 5, torch.device("cpu"))
+        self.assertEqual(a, b)
+        self.assertEqual(len(a), 64)
 
     def test_pooled_baseline_gradient_budget_is_explicit(self):
         data = synthetic_data(n_objects=3)
