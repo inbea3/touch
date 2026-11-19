@@ -191,8 +191,8 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 ## 阶段九最新进度（2026-11-19：单测与真实数据 smoke test 已通过）
 
 - 已新增 `scripts/run_reptile_meta_learning.py`：PyTorch 64/32 MLP、一阶 Reptile 参数位移、1-shot/2-shot Support/Query Episode、普通 pooled MLP 对照和物体级评估代码。
-- `tests/test_reptile_meta_learning.py` 现包含 12 项测试。GitHub Actions run `44489577047` 成功，Reptile 测试步骤完成；新增初始化哈希测试后将随最新提交再次执行。
-- 真实数据 smoke test：GitHub Actions run `44490737087` 成功；官方 pressure-only `classification_lite.zip` 下载、解压、元数据审查、特征提取、Reptile/普通 MLP 训练、验证评估和产物检查均通过。配置为 1 个随机种子、2 个 meta-iterations、meta-batch=2、inner-steps=2、1 个适应步，仅验证管线，不用于模型优劣结论。
+- `tests/test_reptile_meta_learning.py` 现包含 12 项测试。GitHub Actions run `44491690876` 成功，12/12 项 Reptile 单元测试通过。
+- 真实数据 smoke test：GitHub Actions run `44491723400` 成功；官方 pressure-only `classification_lite.zip` 下载、解压、元数据审查、特征提取、Reptile/普通 MLP 训练、验证评估和产物检查均通过。配置为 1 个随机种子、2 个 meta-iterations、meta-batch=2、inner-steps=2、1 个适应步，仅验证管线，不用于模型优劣结论。
 - 数据版本核验：ZIP SHA-256 为 `ce0f27ae87e8ce2ec405f756dfe278b0b8011ef12e9de93e468b7ef31ad76c58`；`metadata.mat` SHA-256 为 `19062ed3415df6e21ae055c5149315a5350652a27d59ab55fed74e395f2f1378`；元数据包含 135,187 帧，pressure-only 字段完整。
 - 公平性审计：两种方法使用同一架构、同一随机种子初始化、同一 Meta-train 物体池和相同梯度更新次数；但 Reptile 按任务 Episode 使用 1/2 条 Support Recording 连续更新，普通 pooled MLP 每步从全部训练 Recording 抽样，因此任务/Recording 访问序列并非严格相同。代码现记录初始化 SHA-256、访问次数和这一差异，不宣称严格数据暴露等价。
 - Smoke test 输出只作为执行诊断；4 个 Meta-validation 物体和单次极短训练不足以支持性能推断。此前未核验的 pilot 数值与对象级结果已删除，不得引用。
