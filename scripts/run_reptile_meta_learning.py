@@ -186,6 +186,7 @@ def train_reptile(data: dict, train_tasks: dict[int, list[int]], n_features: int
     set_seed(seed)
     rng = np.random.default_rng(seed + 101)
     model = EdgeMLP(n_features).to(device)
+    init_hash = model_state_sha256(model)
     task_log, trace = [], []
     object_ids = np.asarray(sorted(train_tasks), dtype=int)
     cached = {oid: tensors_for(data, train_tasks[oid], device) for oid in object_ids}
@@ -222,6 +223,7 @@ def train_reptile(data: dict, train_tasks: dict[int, list[int]], n_features: int
             "task_loss_sd": float(np.std(losses, ddof=1)) if len(losses) > 1 else 0.0,
             "norm_of_mean_task_displacement": delta_norm,
             "meta_batch_size": meta_batch_size, "inner_steps": inner_steps,
+            "initialization_sha256": init_hash,
             "gradient_updates_this_iteration": meta_batch_size * inner_steps})
     return model, task_log, trace, time.time() - start
 
@@ -233,6 +235,7 @@ def train_pooled_mlp(data: dict, train_tasks: dict[int, list[int]], n_features: 
     set_seed(seed)
     rng = np.random.default_rng(seed + 202)
     model = EdgeMLP(n_features).to(device)
+    init_hash = model_state_sha256(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=inner_lr, weight_decay=weight_decay)
     object_ids = np.asarray(sorted(train_tasks), dtype=int)
     cached = {oid: tensors_for(data, train_tasks[oid], device) for oid in object_ids}
@@ -248,7 +251,8 @@ def train_pooled_mlp(data: dict, train_tasks: dict[int, list[int]], n_features: 
         loss.backward()
         optimizer.step()
         trace.append({"seed": seed, "gradient_step": step, "object_id": oid,
-            "recording_id": rid, "minibatch_mse": float(loss.detach().cpu())})
+            "recording_id": rid, "initialization_sha256": init_hash,
+            "minibatch_mse": float(loss.detach().cpu())})
     return model, trace, time.time() - start
 
 
@@ -476,53 +480,82 @@ def run(args) -> dict:
                           ("cpu" if args.device == "auto" else args.device))
     if device.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA requested but unavailable")
-    all_episode_rows, all_task_rows, all_reptile_trace, all_pooled_trace = [], [], [], []
+    all_episode_rows, all_task_rows, all_reptile_trace, all_pooled_trace, all_support_trace = [], [], [], [], []
     runtime = {}
     for seed in args.seeds:
-        init_hash = initial_model_sha256(seed, n_features, device)
-        print(f"[seed {seed}] common_initialization_sha256={init_hash}", flush=True)
+        expected_init_hash = initial_model_sha256(seed, n_features, device)
+        print(f"[seed {seed}] expected_initialization_sha256={expected_init_hash}", flush=True)
         print(f"[seed {seed}] training Reptile", flush=True)
         reptile, task_log, reptile_trace, reptile_seconds = train_reptile(
             data, train_tasks, n_features, seed, args.meta_iterations, args.meta_batch_size,
             args.inner_steps, args.inner_lr, args.outer_step, args.batch_size,
             args.weight_decay, device)
         total_updates = args.meta_iterations * args.meta_batch_size * args.inner_steps
-        print(f"[seed {seed}] training matched pooled MLP ({total_updates} updates)", flush=True)
+        print(f"[seed {seed}] training Support-matched MLP ({total_updates} updates)", flush=True)
+        support_matched, support_trace, support_seconds = train_support_matched_mlp(
+            data, task_log, n_features, seed, args.inner_steps, args.inner_lr,
+            args.batch_size, args.weight_decay, device)
+        print(f"[seed {seed}] training full-data pooled MLP ({total_updates} updates)", flush=True)
         ordinary, pooled_trace, pooled_seconds = train_pooled_mlp(
             data, train_tasks, n_features, seed, total_updates, args.inner_lr,
             args.batch_size, args.weight_decay, device)
-        val_rows = evaluate_split(data, val_tasks, ordinary, reptile, train_mean, seed,
-            args.adapt_steps, args.inner_lr, args.weight_decay, device, "meta_validation")
+        init_hashes = {
+            "reptile": reptile_trace[0]["initialization_sha256"],
+            "support_matched": support_trace[0]["initialization_sha256"],
+            "ordinary": pooled_trace[0]["initialization_sha256"],
+        }
+        if any(value != expected_init_hash for value in init_hashes.values()):
+            raise RuntimeError(f"Initializations are not identical for seed {seed}: {init_hashes}")
+        val_rows = evaluate_split(data, val_tasks, ordinary, support_matched, reptile,
+            train_mean, seed, args.adapt_steps, args.inner_lr, args.weight_decay,
+            device, "meta_validation")
         all_episode_rows.extend(val_rows)
         if args.include_meta_test:
-            test_rows = evaluate_split(data, test_tasks, ordinary, reptile, train_mean, seed,
-                args.adapt_steps, args.inner_lr, args.weight_decay, device, "meta_test_exploratory")
+            test_rows = evaluate_split(data, test_tasks, ordinary, support_matched, reptile,
+                train_mean, seed, args.adapt_steps, args.inner_lr, args.weight_decay,
+                device, "meta_test_exploratory")
             all_episode_rows.extend(test_rows)
         all_task_rows.extend(task_log)
         all_reptile_trace.extend(reptile_trace)
         all_pooled_trace.extend(pooled_trace)
+        all_support_trace.extend(support_trace)
         torch.save({"seed": seed, "state_dict": reptile.state_dict(), "n_features": n_features,
             "method": "Reptile", "config": vars(args)}, output_dir / f"reptile_seed_{seed}.pt")
+        torch.save({"seed": seed, "state_dict": support_matched.state_dict(), "n_features": n_features,
+            "method": "support_matched_mlp", "config": vars(args)}, output_dir / f"support_matched_mlp_seed_{seed}.pt")
         torch.save({"seed": seed, "state_dict": ordinary.state_dict(), "n_features": n_features,
             "method": "ordinary_pooled_mlp", "config": vars(args)}, output_dir / f"ordinary_mlp_seed_{seed}.pt")
         reptile_support_draws = sum(
             len(row["support_recording_ids"].split(";")) for row in task_log
         )
+        support_matched_draws = sum(
+            len(row["support_recording_ids"].split(";")) for row in task_log
+        )
         runtime[str(seed)] = {
             "reptile_training_seconds": reptile_seconds,
+            "support_matched_training_seconds": support_seconds,
             "ordinary_training_seconds": pooled_seconds,
-            "initialization_sha256_shared_by_both_methods": init_hash,
+            "initialization_sha256_shared_by_all_methods": expected_init_hash,
+            "reptile_initialization_sha256": init_hashes["reptile"],
+            "support_matched_initialization_sha256": init_hashes["support_matched"],
+            "ordinary_initialization_sha256": init_hashes["ordinary"],
             "reptile_meta_task_episodes": len(task_log),
             "reptile_support_recording_draws": reptile_support_draws,
+            "support_matched_task_episodes": len(task_log),
+            "support_matched_recording_draws": support_matched_draws,
             "ordinary_object_recording_draws": len(pooled_trace),
             "reptile_inner_gradient_updates": total_updates,
+            "support_matched_gradient_updates": len(support_trace),
             "ordinary_gradient_updates": total_updates,
-            "gradient_update_budget_matched": True,
-            "same_initialization_verified_by_seeded_constructor": True,
+            "gradient_update_budget_matched": len(support_trace) == total_updates,
+            "same_initialization_verified_by_state_hash": True,
             "same_meta_train_object_pool": True,
-            "strict_task_and_recording_access_match": False,
+            "support_matched_task_and_recording_access_match": (
+                len(support_trace) == total_updates and support_matched_draws == reptile_support_draws
+            ),
+            "full_data_pool_strict_task_and_recording_access_match": False,
         }
-        print(f"[seed {seed}] validation episodes={len(val_rows)}", flush=True)
+        print(f"[seed {seed}] validation evaluations={len(val_rows)}", flush=True)
     object_seed_rows = aggregate_by_object(all_episode_rows)
     object_rows = aggregate_seeds_by_object(object_seed_rows)
     val_objects = [r for r in object_rows if r["split"] == "meta_validation"]
