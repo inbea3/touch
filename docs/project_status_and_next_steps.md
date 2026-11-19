@@ -239,3 +239,18 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 完整报告：`results/reptile_meta_learning/anil_first_order_validation_20261119.md`。Artifact `anil-meta-learning-44511962054-1`，SHA-256 `635bec289f39fb2986795e31b07a104407e2ab23dd18b5129d3f55c014151b78`，保留至 2026-12-19；含模型权重、训练 trace、任务调度、Episode/物体级指标、配对差值、summary 和数据审计，不含原始 STAG 压力帧。
 - 研究决策：ANIL 是有意义的 Query-aware 元学习对照，但当前结果不支持其优于普通 MLP。不要立即开展二阶 MAML，也不要在相同四个验证物体上继续广泛调参。若要形成确认性元学习结论，下一步优先获取新增独立物体/Recording 或外部 pressure-only 数据；若无法获取，应将论文定位为探索性跨物体少样本适应研究，诚实报告 Reptile/ANIL 未带来可靠的预测增益。
 - GNN 结构增量实验继续暂缓，除非新的独立数据或后续证据显示图结构建模具有清晰的额外研究价值。
+
+## 阶段十三：公开 pressure-only 数据扩展调研（2026-11-19）
+
+- 已完成系统性数据资源调研，报告见 `docs/data_expansion_research_20261119.md`。
+- 现有 STAG classification 数据为 26 个物体、78 个物体 Recording、548 个传感器。官方还提供 blindfolded（pressure-only 1.58 MiB）、weight-prediction（2.85 MiB）和 hand-pose（5.63 MiB）数据包。前两者可能增加同一物体的跨条件/跨 session Recording，但不能直接增加独立物体任务数；hand-pose 的标签是 G1–G7 抓取类型，不是物体身份，只能用于姿态混杂因素分析。
+- 首选外部人手压力数据为 EgoTactile-OXT：63 个 object-level tasks、767 条 trajectories、314,100 帧，其中 692 条 gloved-hand 直接测压轨迹；162 个布局 cell 对应 137 个唯一物理 sensor indices；约 3.75 GB，CC BY-NC 4.0。先只使用 gloved-hand 轨迹，bare-hand weakly-paired 子集仅作敏感性分析。
+- 第二首选为官方 TUM-ICS Hide-and-Seek：33 个物理物体、61 个 object-weight 类别、约 4.3k trajectories、1,120,116 帧、44 维单手 skin-force 通道、约 624 MB、CC BY 4.0。按物理物体分组，同一物体的所有重量变体必须留在同一外层 split；只提取 skin force，不使用 proximity、distance、pose、wrist F/T 或视频。
+- TouchScale 是高潜力大规模数据：当前公开 100 小时、15,324 episodes、929 tasks、24 participants、880 taxels/hand、905+ object records / 193 object meshes；约 1.08 TB、430 shards、CC BY-NC 4.0 且需要接受访问条件。先下载 metadata 和 geometry，再选择 10–20 个对象的少量 shards，绝不下载全量；items 与 mesh object_name 并非总能一一对应，必须先审计 object identity。
+- OpenTouch（约 5 小时、3 小时 contact-rich、21.1 GB、CC BY 4.0）和 TouchAnything/EgoTouch（约 88.5 GB）保留为候选；需先核实 object-instance ID、数据许可、压力通道 schema。TouchAnything 文档有 16×16 与 21×21 压力网格描述差异。
+- 其他候选 ActionSense、ADL tactile signatures、EgoPressure 主要是活动/参与者/平板手势数据，不适合作为当前 object-level grasp 协同预测的首批主数据。
+- 推荐执行顺序：A) 审计 STAG blindfolded / weight / hand-pose 三个 pressure-only 小包；B) 下载 EgoTactile-OXT 与 HAS（合计约 4.4 GB），先做小样本 pressure-only Smoke Test；C) 再按 metadata 选择性下载 TouchScale shards；D) 最后评估 OpenTouch / TouchAnything。
+- 跨数据集不得按通道索引拼接不同硬件。各数据集单独建图、单独 train-only scaler、独立计算未来 Pearson 相关标签；统一任务单位为物理物体，Recording/trajectory 为 Support/Query 分割单位，sensor edges / frames 不是独立统计单位。
+- EgoTactile 建议按物体类别分层做 5-fold object-level outer CV；HAS 按物理 object ID 做 5-fold，不能按 61 个 object-weight labels 随机拆分。当前 STAG 18/4/4 Meta-test 已在此前阶段使用，不能再称 untouched confirmatory test。
+- 数据扩展后开展 object-count learning curve（例如 10/20/30/全部可用训练物体），保持测试物体、模型、随机种子、训练预算和适应策略不变，比较 Ordinary MLP、Reptile、ANIL 和 Support-matched controls。目标是检验增加独立物体任务是否使元学习的边际收益增长，而不是把更多帧/窗口误当成更多任务。
+- 当前尚未下载/审计新增数据包，尚未运行外部数据实验；本阶段是公开资源调研和预注册式实验规划，不得把候选数据规模当作已验证可用样本数。下一项实际执行任务为 STAG 三个 pressure-only 小包的下载与 metadata inventory。
