@@ -1,0 +1,91 @@
+name: Reptile Meta-validation sensitivity grid
+
+on:
+  push:
+    branches:
+      - integration/old-research-assets
+    paths:
+      - ".github/workflows/reptile-sensitivity-grid.yml"
+      - "scripts/run_reptile_sensitivity_grid.py"
+      - "scripts/run_reptile_meta_learning.py"
+      - "scripts/run_object_coactivation_baselines.py"
+      - "scripts/download_dataset.py"
+      - "scripts/audit_dataset.py"
+      - "results/object_episode_splits/object_split_manifest.json"
+      - "requirements-models.txt"
+      - "docs/meta_learning_protocol.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sensitivity-grid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Check out research code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install model dependencies
+        run: python -m pip install -r requirements-models.txt
+      - name: Download official pressure-only STAG archive
+        run: python scripts/download_dataset.py --output data/raw/classification_lite.zip
+      - name: Extract and audit metadata
+        run: |
+          python scripts/audit_dataset.py \
+            --archive data/raw/classification_lite.zip \
+            --extract-to data/interim \
+            --output-dir /tmp/stag-data-audit
+          test -s data/interim/metadata.mat
+      - name: Run pre-specified 27-configuration, three-seed grid
+        run: |
+          python scripts/run_reptile_sensitivity_grid.py \
+            --metadata data/interim/metadata.mat \
+            --split-manifest results/object_episode_splits/object_split_manifest.json \
+            --output-dir /tmp/reptile-sensitivity-grid \
+            --nodes 96 \
+            --sensor-seed 20261116 \
+            --seeds 20261116,20261117,20261118 \
+            --meta-iterations 50 \
+            --meta-batch-size 4 \
+            --adapt-steps 5 \
+            --batch-size 1024 \
+            --weight-decay 0.001 \
+            --bootstrap-reps 5000 \
+            --bootstrap-seed 20261119 \
+            --device cpu
+      - name: Verify grid and print aggregate-only record
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("/tmp/reptile-sensitivity-grid")
+          summary_path = root / "sensitivity_grid_summary.json"
+          csv_path = root / "sensitivity_grid_summary.csv"
+          if not summary_path.is_file() or not csv_path.is_file():
+              raise SystemExit("Sensitivity-grid summary files are missing")
+          summary = json.loads(summary_path.read_text())
+          assert summary["status"] == "real_data_meta_validation_sensitivity_grid_completed"
+          assert summary["n_configurations"] == 27
+          assert summary["meta_test_used"] is False
+          assert summary["seeds"] == [20261116, 20261117, 20261118]
+          assert summary["data_provenance"]["pressure_only"] is True
+          assert summary["data_provenance"]["metadata_sha256"]
+          assert summary["data_provenance"]["split_manifest_sha256"]
+          assert len(summary["configuration_rows"]) == 27
+          assert all(row["gradient_update_budget_matched"] for row in summary["configuration_rows"])
+          assert all(row["access_difference_disclosed"] for row in summary["configuration_rows"])
+          print("SENSITIVITY_GRID_OUTPUTS_OK")
+          print(json.dumps({
+              "n_configurations": summary["n_configurations"],
+              "seeds": summary["seeds"],
+              "selected_configuration": summary["selected_configuration"],
+              "data_provenance": summary["data_provenance"],
+          }, ensure_ascii=False, indent=2))
+          print("RAW_DATA_FEATURES_CHECKPOINTS_SCALERS_AND_OBJECT_LEVEL_FILES_STAYED_ON_EPHEMERAL_RUNNER")
+          print("NO_ACTIONS_ARTIFACT_UPLOADED")
+          PY
