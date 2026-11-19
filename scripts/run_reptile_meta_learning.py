@@ -578,8 +578,19 @@ def run(args) -> dict:
             "task_sampling": "uniform over meta-train objects without replacement within each meta-batch; 1/2-shot sampled uniformly",
             "inner_loss": "equal mean of per-Recording MSE; each Recording minibatch receives equal weight",
             "query_used_for_meta_gradient": False},
+        "support_matched_baseline": {
+            "training": "single shared MLP; processes the exact Reptile task order and Support Recording IDs, K sequential updates per task; Adam state resets per task; no task clones or Reptile outer update",
+            "gradient_updates_per_seed": args.meta_iterations*args.meta_batch_size*args.inner_steps,
+            "same_architecture": True,
+            "same_training_object_pool": True,
+            "same_seeded_initialization": True,
+            "same_gradient_update_count": True,
+            "same_task_episode_schedule": True,
+            "same_support_recording_schedule": True,
+            "same_per_recording_loss_weighting_and_batch_size": True,
+        },
         "ordinary_baseline": {
-            "training": "pooled MLP; object then Recording sampled uniformly per gradient step",
+            "training": "full-data pooled MLP; object then Recording sampled uniformly per gradient step from all three Meta-train Recordings",
             "gradient_updates_per_seed": args.meta_iterations*args.meta_batch_size*args.inner_steps,
             "same_architecture_and_optimizer": True,
             "same_training_objects": True,
@@ -587,10 +598,9 @@ def run(args) -> dict:
             "same_gradient_update_count": True,
             "strict_recording_access_match": False,
             "access_difference": (
-                "Reptile samples one object Episode and performs K updates on its 1/2 Support "
-                "Recordings; pooled MLP draws one object/Recording per gradient step from all "
-                "three Meta-train Recordings. Gradient steps and initialization are matched, "
-                "but task-episode and recording-access schedules are not identical."
+                "The full-data pooled MLP draws one object/Recording per gradient step from all "
+                "three Meta-train Recordings, whereas Reptile uses task-specific Support sets. "
+                "This is retained as a secondary full-data benchmark, not the primary fair control."
             ),
         },
         "adaptation": {"steps": args.adapt_steps, "optimizer": "Adam", "learning_rate": args.inner_lr,
@@ -610,6 +620,7 @@ def run(args) -> dict:
     write_csv(output_dir / "task_sampling.csv", all_task_rows)
     write_csv(output_dir / "reptile_training_trace.csv", all_reptile_trace)
     write_csv(output_dir / "ordinary_training_trace.csv", all_pooled_trace)
+    write_csv(output_dir / "support_matched_training_trace.csv", all_support_trace)
     write_csv(output_dir / "episode_metrics.csv", all_episode_rows)
     write_csv(output_dir / "object_seed_metrics.csv", object_seed_rows)
     write_csv(output_dir / "object_metrics.csv", object_rows)
@@ -663,7 +674,8 @@ def main(argv=None):
     aggregate_only = {
         "by_shots": validation["by_shots"],
         "paired_mae": [
-            {"shots": row["shots"], "comparison": row["comparison"],
+            {"shots": row["shots"], "baseline_model": row["baseline_model"],
+             "comparison": row["comparison"],
              "positive_favors_reptile": row["positive_favors_reptile"],
              "objects_improved": row["objects_improved"],
              "bootstrap": row["bootstrap"]}
