@@ -4,7 +4,11 @@
   "output_dir": "results/reptile_meta_learning",
   "nodes": 96,
   "sensor_seed": 20261116,
-  "seeds": [20261116, 20261117, 20261118],
+  "seeds": [
+    20261116,
+    20261117,
+    20261118
+  ],
   "meta_iterations": 50,
   "meta_batch_size": 4,
   "inner_steps": 5,
@@ -16,5 +20,7 @@
   "bootstrap_reps": 5000,
   "bootstrap_seed": 20261119,
   "device": "cpu",
-  "include_meta_test": false
+  "include_meta_test": false,
+  "status": "planned_not_executed",
+  "notes": "Proposed settings only. No Reptile training or unit tests have been run."
 }
