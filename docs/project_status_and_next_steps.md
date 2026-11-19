@@ -207,5 +207,18 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 适应步数诊断：Reptile 1-shot MAE 随 full-batch steps 从 0 到 20 单调上升（0.12323→0.12795）；2-shot 在 0 steps 为 0.12323，所有测试步数均未优于零样本。Support-matched MLP 在 1–2 步略有改善，之后恶化；Ordinary MLP 在 0–1 步最好。结果支持适应过度/Support 特异拟合风险，但四个验证物体不足以作确认性推断。
 - 适应算子诊断：10 步 training-style minibatch 相比 10 步 full-batch，Reptile 1-shot MAE 仅改善 0.00065，2-shot 几乎不变（差异 +0.00004）。因此原训练/验证算子不一致确实存在，但不是解释当前 MAE 劣势的充分原因。
 - 任务位移方向诊断：18 个 Meta-train 物体的平均 pairwise cosine，1-shot 为 0.2544、2-shot 为 0.2085；负余弦比例分别为 8.9% 和 13.9%。任务更新整体偏正向且仅中等对齐，不支持“广泛严重梯度冲突”的说法；物体异质性仍可能存在，但尚未证明是主因。
-- 修订后的完整诊断结论见 `results/reptile_meta_learning/diagnostic_analysis_200x3_20261119.md`。当前不建议立即启动 MAML/ANIL 或再跑大规模超参数搜索；下一步应预先规定一个小规模 validation-only 适应策略比较，重点对照 zero-shot、1-step、2-step，并保持 Query Recording 固定。
+- 修订后的完整诊断结论见 `results/reptile_meta_learning/diagnostic_analysis_200x3_20261119.md`。随后已完成预先规定的保守适应策略比较（见阶段十最新进度）；小学习率仅使 Reptile 适应接近零样本，没有带来实质增益。当前不再建议继续在同一验证集上搜索 Reptile 步数/学习率。若继续元学习，下一步应转向 Query-aware 外循环目标的 ANIL/MAML 风格小规模探索，并继续严格限制为探索性验证。
 - 研究范围继续保持 pressure-only；沿用固定 18/4/4 划分。Meta-validation/Meta-test 均属于探索性评估，不能称为独立确认性测试。公开仓库和 Actions Artifact 不包含原始 STAG 压力帧；Artifact 中包含可复现诊断所需的模型 checkpoint、train-only scaler、配置、逐 Episode/物体诊断指标及数据审计摘要。
+
+
+## 阶段十补充进度（2026-11-19：保守适应策略比较已完成）
+
+- 已新增 scripts/compare_reptile_adaptation_policies.py、tests/test_reptile_adaptation_policy_comparison.py 和 .github/workflows/reptile-adaptation-policy-comparison.yml。
+- GitHub Actions run 44509113507 成功；脚本编译和适应策略单元测试通过，准确下载并复用 run 44502406385 的三种方法 × 三个随机种子 checkpoint，以及同一 train-only scaler。
+- 预先规定五种策略：zero-shot；1/2 步、lr=0.001；1/2 步、lr=0.0001。三种模型（Reptile、Support-matched MLP、Ordinary MLP）均在同一固定 Support/Query Episode 上评估。
+- 本轮完成 1,620 条 Episode-query 记录、360 条 object-seed 汇总、120 条 object-level 汇总；4 个 Meta-validation 物体为独立分析单位。Meta-test 未加载、未评估、未用于策略选择。
+- Reptile 的 0.001 学习率适应使 MAE 变差：1-shot 一步 +0.000530、两步 +0.001477；2-shot 一步 +0.000122、两步 +0.000784（相对 Reptile zero-shot）。将学习率降为 0.0001 后，MAE 差异仅约 -0.00001 至 -0.00007，属于近乎无变化，不能称为有效适应增益。
+- Ordinary MLP 在全部策略下 MAE 最低或接近最低，zero-shot MAE 为 0.122340；低学习率适应后的 MAE 约 0.12230，变化极小。Support-matched MLP 在 0.001、两步适应时改善：1-shot MAE 0.122853，2-shot 0.122384；但 Reptile 在相同策略下分别为 0.124702 和 0.124009。
+- Reptile Spearman 通常略高于 Ordinary MLP，但 MAE/RMSE 不占优。排序相关与绝对误差需分别报告。
+- 完整结果见 results/reptile_meta_learning/adaptation_policy_comparison_20261119.md。Artifact reptile-adaptation-policy-comparison-44509113507-1，SHA-256 41910cb0e841553b77f6b507f79429a71611e2bc0bf7da09b5b1647fb3198a97，保留至 2026-12-19；包含五个 CSV、summary JSON 和数据审计摘要，不含原始 STAG 压力帧。
+- 研究判断：保守适应未能揭示 Reptile 的实质优势；不再在同一四个验证物体上进行更广泛的 Reptile 超参数搜索。若继续元学习，建议研究 Query-aware 外循环目标（ANIL/MAML 风格），使元训练目标更贴近跨 Recording Query 泛化；先制定与普通 MLP 公平匹配的梯度预算和验证协议，再进行小规模探索。当前 18/4/4 数据划分不能提供 untouched confirmatory test，最终论文必须明确这一限制。
