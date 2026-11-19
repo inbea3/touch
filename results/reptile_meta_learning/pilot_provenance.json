@@ -33,11 +33,41 @@
     "result_use": "pipeline diagnostic only; not performance evidence",
     "code_commit": "e03a45ab9cc297db182d66b27f336be09606a41a"
   },
-  "full_sensitivity_grid_executed": false,
+  "full_sensitivity_grid_executed": true,
   "full_multi_seed_experiment_executed": false,
   "confirmatory_evaluation": false,
   "unit_test_run_id": 44493081143,
   "initialization_sha256": "8a023689716a581df3e62e56b95d7e576839815f5155186ad40e9c4dfbcdee79",
   "strict_task_and_recording_access_match": false,
-  "gradient_update_budget_matched": true
+  "gradient_update_budget_matched": true,
+  "sensitivity_grid_run_id": 44493070529,
+  "sensitivity_grid_summary_files": [
+    "results/reptile_meta_learning/sensitivity_grid_summary.json",
+    "results/reptile_meta_learning/sensitivity_grid_summary.csv"
+  ],
+  "selected_sensitivity_configuration": {
+    "inner_steps": 10,
+    "inner_lr": 0.001,
+    "outer_step": 0.1,
+    "equal_shot_reptile_mae": 0.1283562105670984,
+    "equal_shot_ordinary_mlp_mae": 0.1244384973515699
+  },
+  "sensitivity_grid_directional_result": {
+    "configurations": 27,
+    "reptile_worse_than_ordinary_1shot": 27,
+    "reptile_worse_than_ordinary_2shot": 27,
+    "interpretation": "exploratory negative result; selected configuration remains slightly worse than ordinary MLP"
+  },
+  "longer_selected_config_validation": {
+    "status": "queued_or_running",
+    "meta_iterations": 200,
+    "seeds": [
+      20261116,
+      20261117,
+      20261118
+    ],
+    "inner_steps": 10,
+    "inner_lr": 0.001,
+    "outer_step": 0.1
+  }
 }
