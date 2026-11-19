@@ -62,7 +62,8 @@ class ReptileSensitivityGridTests(unittest.TestCase):
         row = summarize_run(summary, {"inner_steps": 5, "inner_lr": 5e-4, "outer_step": .05})
         self.assertAlmostEqual(row["selection_score_equal_shot_mae"], .1)
         self.assertTrue(row["gradient_update_budget_matched"])
-        self.assertTrue(row["strict_task_recording_access_match"])
+        self.assertFalse(row["strict_task_recording_access_match"])
+        self.assertTrue(row["access_difference_disclosed"])
 
 
 if __name__ == "__main__":
