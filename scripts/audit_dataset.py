@@ -83,6 +83,11 @@ def main():
     recording_ids=ints(variables.get("recordingId"))
     pressure=variables.get("pressure")
     valid=np.asarray(variables.get("hasValidLabel",[])).reshape(-1)
+    balanced=np.asarray(variables.get("isBalanced",[])).reshape(-1)
+    grasp=np.asarray(variables.get("isGrasp",[])).reshape(-1)
+    transition=np.asarray(variables.get("isTransition",[])).reshape(-1)
+    split_ids=ints(variables.get("splitId"))
+    sensor_count=int(np.count_nonzero(np.nanstd(np.asarray(pressure,dtype=np.float32),axis=0)>0)) if pressure is not None else None
     inventory={}
     for key,value in variables.items():
         if isinstance(value,np.ndarray):
@@ -103,12 +108,20 @@ def main():
         "unique_recording_ids":int(np.unique(recording_ids).size) if recording_ids.size else None,
         "valid_label_values":int(valid.size),
         "valid_label_true":int(np.count_nonzero(valid)) if valid.size else None,
+        "balanced_true":int(np.count_nonzero(balanced)) if balanced.size else None,
+        "isGrasp_true":int(np.count_nonzero(grasp)) if grasp.size else None,
+        "isTransition_true":int(np.count_nonzero(transition)) if transition.size else None,
+        "unique_split_ids":np.unique(split_ids).tolist() if split_ids.size else [],
+        "physical_sensor_pixels_by_nonconstant_mask":sensor_count,
+        "pressure_min":int(np.min(pressure)) if pressure is not None else None,
+        "pressure_max":int(np.max(pressure)) if pressure is not None else None,
         "pressure_shape":list(np.asarray(pressure).shape) if pressure is not None else None,
       },
       "object_names":objects,
       "notes":[
         "Counts are computed from this local file, not copied from the project webpage.",
         "Official documentation describes 32x32 pressure maps with 548 physical sensor pixels.",
+        "Actual field name in the uploaded metadata is isGrasp (not the common typo isGrap).",
         "Frames, overlapping windows and sensor pairs are not independent object-level samples.",
         "This inventory does not infer sensor coordinates or construct prediction labels."
       ]

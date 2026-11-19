@@ -1,0 +1,382 @@
+{
+  "status": "completed_selected_configuration_longer_validation",
+  "workflow_run_id": 44494923410,
+  "workflow_url": "https://github.com/inbea3/touch/actions/runs/44494923410",
+  "code_commit": "e7247dcf0095519bed5e621cd3cfd20ce141a3c7",
+  "configuration": {
+    "inner_steps": 10,
+    "inner_lr": 0.001,
+    "outer_step": 0.1,
+    "meta_iterations": 200,
+    "meta_batch_size": 4,
+    "adapt_steps": 5,
+    "seeds": [
+      20261116,
+      20261117,
+      20261118
+    ],
+    "batch_size": 1024,
+    "weight_decay": 0.001,
+    "gradient_updates_per_seed_per_method": 8000
+  },
+  "data_provenance": {
+    "archive_sha256": "ce0f27ae87e8ce2ec405f756dfe278b0b8011ef12e9de93e468b7ef31ad76c58",
+    "metadata_sha256": "19062ed3415df6e21ae055c5149315a5350652a27d59ab55fed74e395f2f1378",
+    "split_manifest_sha256": "d7017a072def91728f99f6fb89834277a0225e8abfa2df4089b3e2a62d542570",
+    "pressure_only": true,
+    "meta_train_objects": 18,
+    "meta_validation_objects": 4,
+    "meta_test_run": false
+  },
+  "validation_aggregate": {
+    "by_shots": {
+      "1": {
+        "constant_train_zero_shot": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.13752813293020333,
+            "sd": 0.02280492210676764,
+            "median": 0.12921021517949327,
+            "ci95_low": 0.12179938722465869,
+            "ci95_high": 0.1581227631039886
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.17998043414476153,
+            "sd": 0.025875818988263986,
+            "median": 0.17176347323992808,
+            "ci95_low": 0.1624029130163257,
+            "ci95_high": 0.2040884204846511
+          },
+          "spearman": {
+            "n_objects": 0,
+            "mean": null,
+            "ci95_low": null,
+            "ci95_high": null
+          }
+        },
+        "ordinary_mlp_support_adapted": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.12443129531897786,
+            "sd": 0.019616662566203275,
+            "median": 0.11684692711731098,
+            "ci95_low": 0.11239057551603734,
+            "ci95_high": 0.14405638332358522
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.1618712010840434,
+            "sd": 0.021496826971039704,
+            "median": 0.15581236880532084,
+            "ci95_low": 0.1466034668334822,
+            "ci95_high": 0.18319776761332723
+          },
+          "spearman": {
+            "n_objects": 4,
+            "mean": 0.3399452285390491,
+            "sd": 0.026640597688466824,
+            "median": 0.34830950021616447,
+            "ci95_low": 0.3118818216114248,
+            "ci95_high": 0.3579477068715774
+          }
+        },
+        "ordinary_mlp_zero_shot": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.12234000506397916,
+            "sd": 0.019247021007311134,
+            "median": 0.11374357719365114,
+            "ci95_low": 0.11121442227486456,
+            "ci95_high": 0.14115414943622134
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.1602133940723116,
+            "sd": 0.02109505368797075,
+            "median": 0.1517419116273048,
+            "ci95_low": 0.14759226361346017,
+            "ci95_high": 0.1813060069761699
+          },
+          "spearman": {
+            "n_objects": 4,
+            "mean": 0.34185854438833035,
+            "sd": 0.038743941343829684,
+            "median": 0.33799030856427037,
+            "ci95_low": 0.31141095862317714,
+            "ci95_high": 0.37257377851107537
+          }
+        },
+        "reptile_support_adapted": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.12586967729802423,
+            "sd": 0.022633182371162554,
+            "median": 0.11713755210702642,
+            "ci95_low": 0.1116412814851301,
+            "ci95_high": 0.14883019830191613
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.16389690281870267,
+            "sd": 0.024826758845795542,
+            "median": 0.15699269566037544,
+            "ci95_low": 0.1457646055759173,
+            "ci95_high": 0.18893340721981527
+          },
+          "spearman": {
+            "n_objects": 4,
+            "mean": 0.3490457454669326,
+            "sd": 0.04577976097791292,
+            "median": 0.35521518508294053,
+            "ci95_low": 0.30731684316459973,
+            "ci95_high": 0.38460520815325755
+          }
+        },
+        "reptile_zero_shot": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.12322515994532332,
+            "sd": 0.018845996200317877,
+            "median": 0.11522831311826899,
+            "ci95_low": 0.11246547188155169,
+            "ci95_high": 0.14191246779143057
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.16099175080814293,
+            "sd": 0.021050124932626098,
+            "median": 0.1531186870563771,
+            "ci95_low": 0.14756607051962484,
+            "ci95_high": 0.18229049484842688
+          },
+          "spearman": {
+            "n_objects": 4,
+            "mean": 0.345730592955058,
+            "sd": 0.047252435003230675,
+            "median": 0.35712355903444104,
+            "ci95_low": 0.30620816188205363,
+            "ci95_high": 0.38170091826338126
+          }
+        }
+      },
+      "2": {
+        "constant_train_zero_shot": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.13752813293020333,
+            "sd": 0.02280492210676764,
+            "median": 0.12921021517949327,
+            "ci95_low": 0.12179938722465869,
+            "ci95_high": 0.1581227631039886
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.17998043414476153,
+            "sd": 0.025875818988263986,
+            "median": 0.17176347323992808,
+            "ci95_low": 0.1624029130163257,
+            "ci95_high": 0.2040884204846511
+          },
+          "spearman": {
+            "n_objects": 0,
+            "mean": null,
+            "ci95_low": null,
+            "ci95_high": null
+          }
+        },
+        "ordinary_mlp_support_adapted": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.12356115780070998,
+            "sd": 0.020892188935713745,
+            "median": 0.11437431778224313,
+            "ci95_low": 0.11167908630658767,
+            "ci95_high": 0.1446300693132991
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.16052914424863365,
+            "sd": 0.022161297306608846,
+            "median": 0.15297627818474208,
+            "ci95_low": 0.14566159399923115,
+            "ci95_high": 0.18294956056192774
+          },
+          "spearman": {
+            "n_objects": 4,
+            "mean": 0.34243564056425346,
+            "sd": 0.025126918522347746,
+            "median": 0.3501422570137459,
+            "ci95_low": 0.3189471140799431,
+            "ci95_high": 0.3594852116222429
+          }
+        },
+        "ordinary_mlp_zero_shot": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.12234000506397916,
+            "sd": 0.019247021007311134,
+            "median": 0.11374357719365114,
+            "ci95_low": 0.11121442227486456,
+            "ci95_high": 0.14115414943622134
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.16021339407231164,
+            "sd": 0.02109505368797075,
+            "median": 0.15174191162730483,
+            "ci95_low": 0.14759226361346017,
+            "ci95_high": 0.18130600697616991
+          },
+          "spearman": {
+            "n_objects": 4,
+            "mean": 0.34185854438833035,
+            "sd": 0.038743941343829684,
+            "median": 0.33799030856427037,
+            "ci95_low": 0.31141095862317714,
+            "ci95_high": 0.37257377851107537
+          }
+        },
+        "reptile_support_adapted": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.12453858612178464,
+            "sd": 0.02302359598142696,
+            "median": 0.11472823274610155,
+            "ci95_low": 0.11109052300210247,
+            "ci95_high": 0.14779700261714993
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.16175579851835636,
+            "sd": 0.024443978587078086,
+            "median": 0.15368469219674605,
+            "ci95_low": 0.14511009483764561,
+            "ci95_high": 0.1864726085206774
+          },
+          "spearman": {
+            "n_objects": 4,
+            "mean": 0.35975152865639903,
+            "sd": 0.040172995747412434,
+            "median": 0.3702621612417114,
+            "ci95_low": 0.32175430768026414,
+            "ci95_high": 0.38723811704722155
+          }
+        },
+        "reptile_zero_shot": {
+          "mae": {
+            "n_objects": 4,
+            "mean": 0.12322515994532332,
+            "sd": 0.018845996200317877,
+            "median": 0.11522831311826899,
+            "ci95_low": 0.1124654718815517,
+            "ci95_high": 0.14191246779143057
+          },
+          "rmse": {
+            "n_objects": 4,
+            "mean": 0.16099175080814293,
+            "sd": 0.021050124932626105,
+            "median": 0.1531186870563771,
+            "ci95_low": 0.14756607051962484,
+            "ci95_high": 0.18229049484842688
+          },
+          "spearman": {
+            "n_objects": 4,
+            "mean": 0.345730592955058,
+            "sd": 0.047252435003230675,
+            "median": 0.35712355903444104,
+            "ci95_low": 0.30620816188205363,
+            "ci95_high": 0.38170091826338126
+          }
+        }
+      }
+    },
+    "paired_mae": [
+      {
+        "shots": 1,
+        "comparison": "ordinary_finetune_minus_reptile_finetune",
+        "positive_favors_reptile": true,
+        "objects_improved": 2,
+        "bootstrap": {
+          "n_objects": 4,
+          "mean": -0.0014383819790463638,
+          "sd": 0.003146100546842414,
+          "median": -0.00029062498971544476,
+          "ci95_low": -0.0042697320795909086,
+          "ci95_high": 0.0007387096231930151
+        }
+      },
+      {
+        "shots": 2,
+        "comparison": "ordinary_finetune_minus_reptile_finetune",
+        "positive_favors_reptile": true,
+        "objects_improved": 1,
+        "bootstrap": {
+          "n_objects": 4,
+          "mean": -0.0009774283210746831,
+          "sd": 0.0021683924585210426,
+          "median": -0.00035391496385843435,
+          "ci95_low": -0.0031669333038508198,
+          "ci95_high": 0.0005885633044852047
+        }
+      }
+    ]
+  },
+  "equal_weighted_shot_mae": {
+    "reptile": 0.12520413170990444,
+    "ordinary_mlp": 0.12399622655984391,
+    "ordinary_minus_reptile": -0.0012079051500605287
+  },
+  "paired_inference": {
+    "one_shot": {
+      "ordinary_minus_reptile_mean": -0.0014383819790463638,
+      "ci95_low": -0.0042697320795909086,
+      "ci95_high": 0.0007387096231930151,
+      "objects_favoring_reptile": 2
+    },
+    "two_shot": {
+      "ordinary_minus_reptile_mean": -0.0009774283210746831,
+      "ci95_low": -0.0031669333038508198,
+      "ci95_high": 0.0005885633044852047,
+      "objects_favoring_reptile": 1
+    }
+  },
+  "runtime_by_seed": {
+    "20261116": {
+      "reptile_training_seconds": 9.658445596694946,
+      "ordinary_training_seconds": 7.275841236114502,
+      "initialization_sha256": "8a023689716a581df3e62e56b95d7e576839815f5155186ad40e9c4dfbcdee79",
+      "reptile_meta_task_episodes": 800,
+      "reptile_support_recording_draws": 1198,
+      "ordinary_recording_draws": 8000,
+      "gradient_updates_per_method": 8000
+    },
+    "20261117": {
+      "reptile_training_seconds": 8.480127573013306,
+      "ordinary_training_seconds": 7.283854722976685,
+      "initialization_sha256": "f313e9256ae03ec84e63c0f09df373538f1a3f5954c49cb9a1692864daffa8a0",
+      "reptile_meta_task_episodes": 800,
+      "reptile_support_recording_draws": 1198,
+      "ordinary_recording_draws": 8000,
+      "gradient_updates_per_method": 8000
+    },
+    "20261118": {
+      "reptile_training_seconds": 8.49799633026123,
+      "ordinary_training_seconds": 7.304665803909302,
+      "initialization_sha256": "c4b24f6037c6941f47c245f6ffafd115b28a4b26cdfa57e63205a64722355082",
+      "reptile_meta_task_episodes": 800,
+      "reptile_support_recording_draws": 1214,
+      "ordinary_recording_draws": 8000,
+      "gradient_updates_per_method": 8000
+    }
+  },
+  "comparison_audit": {
+    "same_architecture": true,
+    "same_seeded_initialization": true,
+    "same_meta_train_object_pool": true,
+    "gradient_update_budget_matched": true,
+    "strict_task_and_recording_access_match": false,
+    "note": "Reptile uses 1/2 Support Recordings per task Episode for K inner steps; pooled MLP draws one Recording per gradient step from all three Meta-train Recordings."
+  },
+  "interpretation": "At 200 meta-iterations, Reptile's Support-adapted MAE remained slightly higher than ordinary MLP in both shot settings. The object-level paired bootstrap 95% intervals for ordinary-minus-Reptile include zero in both settings. With only four validation objects and a split already exposed in prior stages, this is exploratory evidence of no demonstrated Reptile advantage, not a confirmatory equivalence or non-inferiority result."
+}

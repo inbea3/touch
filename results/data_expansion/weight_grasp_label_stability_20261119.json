@@ -1,0 +1,87 @@
+{
+  "audit_date": "2026-11-19",
+  "dataset": "STAG Weight pressure-only",
+  "question": "stability of future sensor-pair Pearson correlation targets across repeated grasp intervals",
+  "no_model_training": true,
+  "no_video_or_other_modalities": true,
+  "preprocessing": {
+    "valid_field": "graspValid",
+    "grasp_indices_used": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "incomplete_index_ignored": 6,
+    "early_input_valid_frames": 5,
+    "future_target": "remaining graspValid frames after first five",
+    "selected_sensor_count": 96,
+    "selected_sensor_seed": 20261116,
+    "selected_sensor_indices_verified_against_reptile_run_44502406385": true,
+    "pressure_transform": "clip((pressure - 500) / 150, 0, 1)",
+    "undirected_edges": 4560
+  },
+  "sample_size": {
+    "physical_objects": 26,
+    "main_grasp_intervals": 156,
+    "valid_frames_per_grasp_min": 11,
+    "valid_frames_per_grasp_max": 15,
+    "future_frames_per_grasp_min": 6,
+    "future_frames_per_grasp_max": 10,
+    "unique_three_vs_three_splits_per_object": 10,
+    "total_nested_splits": 260
+  },
+  "individual_grasp_pair_agreement": {
+    "comparisons_nested_within_object": 390,
+    "edge_spearman_mean": 0.0026250814,
+    "edge_spearman_median": 0.0023725038,
+    "positive_edge_jaccard_r_ge_0_7_mean": 0.0112249152,
+    "positive_edge_jaccard_r_ge_0_7_median": 0.0096386102
+  },
+  "pooled_three_vs_three": {
+    "aggregation": "average ten unique splits within each object, then summarize 26 object means",
+    "object_bootstrap_repetitions": 5000,
+    "object_bootstrap_seed": 20261119,
+    "edge_spearman": {
+      "mean": 0.05043039199,
+      "median": 0.04251765305,
+      "ci95": [
+        0.03655252297,
+        0.06596215544
+      ]
+    },
+    "positive_edge_jaccard_r_ge_0_5": {
+      "mean": 0.06895397267,
+      "median": 0.06230790131,
+      "ci95": [
+        0.05677304242,
+        0.08220502498
+      ]
+    },
+    "positive_edge_jaccard_r_ge_0_7": {
+      "mean": 0.04059364245,
+      "median": 0.03610277687,
+      "ci95": [
+        0.02830969706,
+        0.05406689442
+      ]
+    },
+    "positive_edge_jaccard_r_ge_0_9": {
+      "mean": 0.0400956012,
+      "median": 0.01666666667,
+      "ci95": [
+        0.01525862005,
+        0.07473621752
+      ]
+    },
+    "r_ge_0_9_valid_comparisons": 216,
+    "r_ge_0_9_total_comparisons": 260
+  },
+  "full_valid_window_sensitivity_not_future_protocol": {
+    "edge_spearman_mean": 0.05591897359,
+    "positive_edge_jaccard_r_ge_0_7_mean": 0.04108805693
+  },
+  "decision": "Do not yet use the six grasp intervals as exchangeable Reptile/ANIL recordings. Investigate variance coverage and shrinkage estimators or a pre-specified pooled cross-grasp object-level target; otherwise retain as repeated-grasp variability analysis only."
+}

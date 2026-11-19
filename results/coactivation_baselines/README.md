@@ -1,0 +1,1 @@
+首轮 pressure-only 基线结果。主报告见 docs/coactivation_baseline_results.md。运行 scripts/run_object_coactivation_baselines.py 可重新生成完整 JSON、逐物体指标和 Recording 覆盖率 CSV。该结果只使用固定 96/548 传感器子集，Meta-test 只有 4 个物体，不作为最终泛化结论。

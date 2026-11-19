@@ -1,0 +1,133 @@
+name: Reptile conservative adaptation policy comparison
+
+on:
+  push:
+    branches:
+      - integration/old-research-assets
+    paths:
+      - "scripts/compare_reptile_adaptation_policies.py"
+      - "tests/test_reptile_adaptation_policy_comparison.py"
+      - ".github/workflows/reptile-adaptation-policy-comparison.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: reptile-adaptation-policy-comparison
+  cancel-in-progress: false
+
+jobs:
+  compare-policies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out research code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install model dependencies
+        run: python -m pip install -r requirements-models.txt
+      - name: Run unit tests and compile check
+        run: |
+          python -m py_compile scripts/compare_reptile_adaptation_policies.py
+          python -m unittest discover -s tests -p 'test_reptile_adaptation_policy_comparison.py' -v
+      - name: Download exact selected-validation checkpoints and train-only scaler
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: ${{ github.repository }}
+          run_id: 44502406385
+          name: reptile-selected-validation-44502406385-1
+          path: /tmp/reptile-checkpoints
+          skip_unpack: false
+      - name: Download official pressure-only STAG archive
+        run: python scripts/download_dataset.py --output data/raw/classification_lite.zip
+      - name: Extract and audit metadata
+        run: |
+          python scripts/audit_dataset.py \
+            --archive data/raw/classification_lite.zip \
+            --extract-to data/interim \
+            --output-dir /tmp/stag-data-audit
+          test -s data/interim/metadata.mat
+      - name: Verify exact checkpoint and scaler inputs
+        run: |
+          CHECKPOINT_DIR=/tmp/reptile-checkpoints/reptile-selected-validation
+          test -s "$CHECKPOINT_DIR/reptile_seed_20261116.pt"
+          test -s "$CHECKPOINT_DIR/reptile_seed_20261117.pt"
+          test -s "$CHECKPOINT_DIR/reptile_seed_20261118.pt"
+          test -s "$CHECKPOINT_DIR/support_matched_mlp_seed_20261116.pt"
+          test -s "$CHECKPOINT_DIR/ordinary_mlp_seed_20261116.pt"
+          test -s "$CHECKPOINT_DIR/feature_scaler.npz"
+      - name: Run pre-specified validation-only adaptation policy comparison
+        run: |
+          python scripts/compare_reptile_adaptation_policies.py \
+            --metadata data/interim/metadata.mat \
+            --split-manifest results/object_episode_splits/object_split_manifest.json \
+            --checkpoint-dir /tmp/reptile-checkpoints/reptile-selected-validation \
+            --scaler-npz /tmp/reptile-checkpoints/reptile-selected-validation/feature_scaler.npz \
+            --output-dir /tmp/reptile-adaptation-policy-comparison \
+            --seeds 20261116,20261117,20261118 \
+            --nodes 96 \
+            --sensor-seed 20261116 \
+            --weight-decay 0.001 \
+            --bootstrap-seed 20261120 \
+            --device cpu
+      - name: Verify aggregate-only outputs and evaluation boundaries
+        run: |
+          python - <<'PY'
+          import csv
+          import json
+          from pathlib import Path
+          out = Path('/tmp/reptile-adaptation-policy-comparison')
+          required = [
+              'adaptation_policy_episode_metrics.csv',
+              'adaptation_policy_object_seed_metrics.csv',
+              'adaptation_policy_object_metrics.csv',
+              'adaptation_policy_summary.csv',
+              'adaptation_policy_paired_differences.csv',
+              'adaptation_policy_summary.json',
+          ]
+          missing = [name for name in required if not (out / name).is_file() or (out / name).stat().st_size == 0]
+          if missing:
+              raise SystemExit(f'Missing or empty outputs: {missing}')
+          summary = json.loads((out / 'adaptation_policy_summary.json').read_text())
+          assert len(summary['meta_train_objects']) == 18
+          assert len(summary['validation_objects']) == 4
+          assert summary['seeds'] == [20261116, 20261117, 20261118]
+          assert summary['meta_test_evaluated'] is False
+          assert len(summary['policies']) == 5
+          assert len(summary['policy_summary']) == 30
+          assert len(summary['paired_comparisons']) == 44
+          with (out / 'adaptation_policy_episode_metrics.csv').open(newline='') as f:
+              episode_rows = list(csv.DictReader(f))
+          with (out / 'adaptation_policy_object_seed_metrics.csv').open(newline='') as f:
+              seed_rows = list(csv.DictReader(f))
+          with (out / 'adaptation_policy_object_metrics.csv').open(newline='') as f:
+              object_rows = list(csv.DictReader(f))
+          assert len(episode_rows) == 1620, len(episode_rows)
+          assert len(seed_rows) == 360, len(seed_rows)
+          assert len(object_rows) == 120, len(object_rows)
+          print('ADAPTATION_POLICY_OUTPUTS_VERIFIED')
+          print(json.dumps({
+              'validation_objects': summary['validation_objects'],
+              'policies': summary['policies'],
+              'meta_test_evaluated': summary['meta_test_evaluated'],
+              'episode_rows': len(episode_rows),
+              'object_seed_rows': len(seed_rows),
+              'object_rows': len(object_rows),
+          }, ensure_ascii=False, indent=2))
+          PY
+      - name: Upload adaptation policy comparison outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reptile-adaptation-policy-comparison-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            /tmp/reptile-adaptation-policy-comparison/
+            /tmp/stag-data-audit/
+          if-no-files-found: warn
+          retention-days: 30

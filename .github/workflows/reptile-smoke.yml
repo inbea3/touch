@@ -1,0 +1,103 @@
+name: Reptile real-data smoke test
+
+on:
+  push:
+    branches:
+      - integration/old-research-assets
+    paths:
+      - ".github/workflows/reptile-smoke.yml"
+      - "scripts/run_reptile_meta_learning.py"
+      - "scripts/run_object_coactivation_baselines.py"
+      - "scripts/download_dataset.py"
+      - "scripts/audit_dataset.py"
+      - "results/object_episode_splits/object_split_manifest.json"
+      - "requirements-models.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pressure-only-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out research code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install model dependencies
+        run: python -m pip install -r requirements-models.txt
+      - name: Download official pressure-only STAG archive
+        run: python scripts/download_dataset.py --output data/raw/classification_lite.zip
+      - name: Extract and audit metadata
+        run: |
+          python scripts/audit_dataset.py \
+            --archive data/raw/classification_lite.zip \
+            --extract-to data/interim \
+            --output-dir /tmp/stag-data-audit
+          test -s data/interim/metadata.mat
+      - name: Run real-data Reptile smoke test (one seed, two meta-iterations)
+        run: |
+          python scripts/run_reptile_meta_learning.py \
+            --metadata data/interim/metadata.mat \
+            --split-manifest results/object_episode_splits/object_split_manifest.json \
+            --output-dir /tmp/reptile-smoke \
+            --nodes 96 \
+            --sensor-seed 20261116 \
+            --seeds 20261116 \
+            --meta-iterations 2 \
+            --meta-batch-size 2 \
+            --inner-steps 2 \
+            --inner-lr 0.0005 \
+            --outer-step 0.05 \
+            --adapt-steps 1 \
+            --batch-size 1024 \
+            --weight-decay 0.001 \
+            --bootstrap-reps 200 \
+            --bootstrap-seed 20261119 \
+            --device cpu
+      - name: Verify smoke outputs and print aggregate-only result
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("/tmp/reptile-smoke")
+          required = [
+              "config.json", "run_summary.json", "task_sampling.csv",
+              "reptile_training_trace.csv", "ordinary_training_trace.csv", "support_matched_training_trace.csv",
+              "episode_metrics.csv", "object_seed_metrics.csv",
+              "object_metrics.csv", "feature_scaler.npz", "provenance.json",
+              "reptile_seed_20261116.pt", "support_matched_mlp_seed_20261116.pt", "ordinary_mlp_seed_20261116.pt",
+          ]
+          missing = [name for name in required if not (out / name).is_file() or (out / name).stat().st_size == 0]
+          if missing:
+              raise SystemExit(f"Missing or empty smoke outputs: {missing}")
+          summary = json.loads((out / "run_summary.json").read_text())
+          assert summary["meta_train_objects"] == 18
+          assert summary["meta_validation_objects"] == 4
+          assert summary["meta_test_objects"] == 0
+          runtime = summary["runtime_by_seed"]["20261116"]
+          assert runtime["gradient_update_budget_matched"] is True
+          assert runtime["same_initialization_verified_by_state_hash"] is True
+          assert runtime["support_matched_task_and_recording_access_match"] is True
+          assert runtime["strict_task_and_recording_access_match"] is False
+          validation = summary["validation_summary"]
+          aggregate_only = {
+              "by_shots": validation["by_shots"],
+              "paired_mae": [
+                  {"shots": row["shots"], "comparison": row["comparison"],
+                   "positive_favors_reptile": row["positive_favors_reptile"],
+                   "objects_improved": row["objects_improved"],
+                   "bootstrap": row["bootstrap"]}
+                  for row in validation["paired_mae"]
+              ],
+          }
+          print("SMOKE_OUTPUTS_OK")
+          print("AGGREGATE_VALIDATION_SUMMARY_BEGIN")
+          print(json.dumps(aggregate_only, ensure_ascii=False, indent=2))
+          print("AGGREGATE_VALIDATION_SUMMARY_END")
+          print("DATA_AND_MODEL_DERIVATIVES_REMAINED_ON_EPHEMERAL_RUNNER; NO ARTIFACT UPLOADED")
+          PY

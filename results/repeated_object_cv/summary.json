@@ -1,0 +1,269 @@
+{
+  "scope": "STAG pressure-only; no synchronized video or multimodal data",
+  "design": "Repeated 5-fold object-grouped outer CV, 5 repeats, fixed hyperparameters",
+  "n_objects": 26,
+  "n_recordings": 78,
+  "n_outer_fits": 25,
+  "held_out_appearances_per_object": 5,
+  "fold_test_object_counts": [
+    6,
+    5,
+    5,
+    5,
+    5
+  ],
+  "fold_train_object_counts": [
+    20,
+    21,
+    21,
+    21,
+    21
+  ],
+  "nodes": 96,
+  "active_nodes": 548,
+  "edges_per_recording": 4560,
+  "sensor_seed": 20261116,
+  "model_seed": 20261116,
+  "split_seeds": [
+    20261119,
+    20261120,
+    20261121,
+    20261122,
+    20261123
+  ],
+  "mlp": {
+    "hidden_layers": [
+      64,
+      32
+    ],
+    "alpha": 0.001,
+    "epochs": 50,
+    "learning_rate_init": 0.0005,
+    "adapt_epochs": 5
+  },
+  "logistic": {
+    "C": 1,
+    "class_weight": "balanced",
+    "support_prior_penalty": 1
+  },
+  "bootstrap": {
+    "unit": "object",
+    "n_objects": 26,
+    "repetitions": 5000,
+    "confidence_interval": "95% percentile"
+  },
+  "summary_by_shots": {
+    "1": {
+      "constant_train": {
+        "mae": {
+          "mean": 0.13304697,
+          "ci95": [
+            0.12674364,
+            0.13984531
+          ]
+        },
+        "rmse": {
+          "mean": 0.17375918,
+          "ci95": [
+            0.16600772,
+            0.18189202
+          ]
+        }
+      },
+      "mlp_zero_shot": {
+        "mae": {
+          "mean": 0.1171605,
+          "ci95": [
+            0.1118767,
+            0.12304353
+          ]
+        },
+        "rmse": {
+          "mean": 0.15337769,
+          "ci95": [
+            0.14702223,
+            0.16028321
+          ]
+        },
+        "spearman": {
+          "mean": 0.36078531,
+          "ci95": [
+            0.32840127,
+            0.39208884
+          ]
+        }
+      },
+      "mlp_support_adapted": {
+        "mae": {
+          "mean": 0.12308486,
+          "ci95": [
+            0.11610381,
+            0.13069884
+          ]
+        },
+        "rmse": {
+          "mean": 0.16042837,
+          "ci95": [
+            0.15271414,
+            0.16864307
+          ]
+        },
+        "spearman": {
+          "mean": 0.34882343,
+          "ci95": [
+            0.31486314,
+            0.38200806
+          ]
+        }
+      },
+      "logistic_zero_shot": {
+        "auroc": {
+          "mean": 0.90466131,
+          "ci95": [
+            0.8870103,
+            0.92066836
+          ]
+        },
+        "average_precision": {
+          "mean": 0.10621089,
+          "ci95": [
+            0.08769152,
+            0.12484714
+          ]
+        },
+        "f1": 0.04146057,
+        "precision": 0.02140618,
+        "recall": 0.88214422
+      }
+    },
+    "2": {
+      "constant_train": {
+        "mae": {
+          "mean": 0.13304697,
+          "ci95": [
+            0.1265823,
+            0.13972205
+          ]
+        },
+        "rmse": {
+          "mean": 0.17375918,
+          "ci95": [
+            0.16617228,
+            0.18172566
+          ]
+        }
+      },
+      "mlp_zero_shot": {
+        "mae": {
+          "mean": 0.1171605,
+          "ci95": [
+            0.11192438,
+            0.12316437
+          ]
+        },
+        "rmse": {
+          "mean": 0.15337769,
+          "ci95": [
+            0.14693878,
+            0.16007457
+          ]
+        },
+        "spearman": {
+          "mean": 0.36078531,
+          "ci95": [
+            0.32963393,
+            0.39241969
+          ]
+        }
+      },
+      "mlp_support_adapted": {
+        "mae": {
+          "mean": 0.11835987,
+          "ci95": [
+            0.11229938,
+            0.12504353
+          ]
+        },
+        "rmse": {
+          "mean": 0.15493765,
+          "ci95": [
+            0.14822247,
+            0.16268207
+          ]
+        },
+        "spearman": {
+          "mean": 0.36528527,
+          "ci95": [
+            0.33214596,
+            0.39703153
+          ]
+        }
+      }
+    }
+  },
+  "paired_mae_differences": [
+    {
+      "shots": 1,
+      "comparison": "constant_minus_mlp_zero_shot",
+      "mean": 0.01588647,
+      "ci95": [
+        0.01306219,
+        0.01871613
+      ],
+      "relative_reduction_mean": 0.11730162,
+      "relative_ci95": [
+        0.09835294,
+        0.13558349
+      ],
+      "objects_improved": 26,
+      "n_objects": 26
+    },
+    {
+      "shots": 2,
+      "comparison": "constant_minus_mlp_zero_shot",
+      "mean": 0.01588647,
+      "ci95": [
+        0.012971,
+        0.01875
+      ],
+      "relative_reduction_mean": 0.11730162,
+      "relative_ci95": [
+        0.09841683,
+        0.13581069
+      ],
+      "objects_improved": 26,
+      "n_objects": 26
+    },
+    {
+      "shots": 1,
+      "comparison": "zero_shot_minus_support_adapted",
+      "mean": -0.00592436,
+      "ci95": [
+        -0.00831447,
+        -0.00358951
+      ],
+      "objects_improved": 4,
+      "n_objects": 26
+    },
+    {
+      "shots": 2,
+      "comparison": "zero_shot_minus_support_adapted",
+      "mean": -0.00119937,
+      "ci95": [
+        -0.002741,
+        0.00007223
+      ],
+      "objects_improved": 11,
+      "n_objects": 26
+    }
+  ],
+  "positive_edge_prevalence": 0.0056652,
+  "runtime_seconds": 552.7312,
+  "limitations": [
+    "26 distinct objects only",
+    "Fold training sets overlap",
+    "96/548 sensor subset only",
+    "not nested CV",
+    "fixed-split test objects are reused in training in other repeats"
+  ]
+}
