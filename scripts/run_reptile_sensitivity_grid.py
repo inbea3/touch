@@ -63,10 +63,11 @@ def summarize_run(summary: dict, config: dict) -> dict:
         x["gradient_update_budget_matched"] for x in summary["runtime_by_seed"].values()
     )
     row["strict_task_recording_access_match"] = all(
-        not x["strict_task_and_recording_access_match"]
+        x["strict_task_and_recording_access_match"]
         for x in summary["runtime_by_seed"].values()
     )
-    if not row["gradient_update_budget_matched"] or not row["strict_task_recording_access_match"]:
+    row["access_difference_disclosed"] = not row["strict_task_recording_access_match"]
+    if not row["gradient_update_budget_matched"] or not row["access_difference_disclosed"]:
         raise ValueError("Unexpected baseline budget/access audit result")
     return row
 
