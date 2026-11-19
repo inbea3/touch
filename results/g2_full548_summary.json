@@ -1,0 +1,67 @@
+{
+  "stage": "G2 full-548-node spatial graph comparison",
+  "status": "completed_primary_k6_three_repeats_five_fold_grouped_object_cv",
+  "split_seeds": [
+    20261119,
+    20261120,
+    20261121
+  ],
+  "outer_folds": 15,
+  "dataset": {
+    "active_sensors": 548,
+    "objects": 26,
+    "nonempty_recordings": 78,
+    "unordered_pairs_per_recording": 149878,
+    "all_target_pairs_finite": true
+  },
+  "training": {
+    "epochs": 5,
+    "pairs_per_recording_per_epoch": 4096,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0005,
+    "weight_decay": 0.001
+  },
+  "metrics": {
+    "Node-MLP": {
+      "mae": 0.12250377556197663,
+      "rmse": 0.15955604708347565,
+      "spearman": 0.3247986792762873
+    },
+    "Spatial-GNN k6": {
+      "mae": 0.12215032431687045,
+      "rmse": 0.15904404678278503,
+      "spearman": 0.32488348285429497
+    },
+    "Rewired-GNN k6": {
+      "mae": 0.12315834940880792,
+      "rmse": 0.16057046754365292,
+      "spearman": 0.317289071869633
+    }
+  },
+  "paired_mae_difference_vs_node_mlp": {
+    "Spatial-GNN k6": {
+      "mean": -0.0003534512451061834,
+      "object_bootstrap_95_ci": [
+        -0.0005251956275767744,
+        -0.000167666185392528
+      ],
+      "objects_better": 22,
+      "objects_worse": 4
+    },
+    "Rewired-GNN k6": {
+      "mean": 0.000654573846831282,
+      "object_bootstrap_95_ci": [
+        0.0003733556247992906,
+        0.0009897437503832032
+      ],
+      "objects_better": 6,
+      "objects_worse": 20
+    }
+  },
+  "limitations": [
+    "5-epoch exploratory budget; convergence not established.",
+    "Full-548 k=4/k=8 sensitivity remains outstanding.",
+    "Three repeats reuse the same 26 objects; bootstrap is descriptive.",
+    "One rewiring realization per split seed."
+  ]
+}
