@@ -465,8 +465,6 @@ def main():
         support_init = support_trace[0]["initialization_sha256"]
         if support_init != expected_init:
             raise RuntimeError("ANIL-schedule Support-matched baseline initialization mismatch")
-        if model_state_sha256(EdgeMLP(n_features).to(device)) == "":
-            raise RuntimeError("Unreachable state hash guard")
 
         # Verify that the downloaded Reptile/ordinary checkpoints were trained
         # from the same deterministic seed initialization via their provenance traces.
