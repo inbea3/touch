@@ -605,7 +605,7 @@ def run(args) -> dict:
             ),
         },
         "adaptation": {"steps": args.adapt_steps, "optimizer": "Adam", "learning_rate": args.inner_lr,
-            "same_support_recordings_and_budget_for_both_initializations": True},
+            "same_support_recordings_and_budget_for_all_three_initializations": True},
         "seeds": args.seeds, "runtime_by_seed": runtime,
         "validation_summary": summarize(val_objects, args.bootstrap_seed, args.bootstrap_reps),
         "meta_test_exploratory_summary": summarize(test_objects, args.bootstrap_seed+1, args.bootstrap_reps) if test_objects else None,
@@ -614,7 +614,7 @@ def run(args) -> dict:
             "The fixed 18/4/4 test objects and all 26 objects were used in earlier research stages; no untouched final test remains.",
             "Only 96/548 sensors are used; no full-array claim.",
             "Sensor edges are correlated and are averaged within Recording; no edge-level inferential sample size is claimed.",
-            "This first implementation compares Reptile with a gradient-update-matched pooled MLP; it does not establish meta-learning benefit."]}
+            "Reptile is compared with a Support-matched sequential MLP control and a full-data pooled MLP benchmark; object-level validation remains exploratory."]}
     args_config = {k: (str(v) if isinstance(v, Path) else v) for k, v in vars(args).items()}
     (output_dir / "config.json").write_text(json.dumps(args_config, ensure_ascii=False, indent=2), encoding="utf-8")
     (output_dir / "run_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
