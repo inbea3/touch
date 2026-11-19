@@ -34,3 +34,5 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_repeated_object_cv.py' -v
       - name: Test Reptile meta-learning and matched MLP baseline
         run: python -m unittest discover -s tests -p 'test_reptile_meta_learning.py' -v
+      - name: Test Reptile sensitivity grid and validation selection
+        run: python -m unittest discover -s tests -p 'test_reptile_sensitivity_grid.py' -v
