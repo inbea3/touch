@@ -254,3 +254,17 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - EgoTactile 建议按物体类别分层做 5-fold object-level outer CV；HAS 按物理 object ID 做 5-fold，不能按 61 个 object-weight labels 随机拆分。当前 STAG 18/4/4 Meta-test 已在此前阶段使用，不能再称 untouched confirmatory test。
 - 数据扩展后开展 object-count learning curve（例如 10/20/30/全部可用训练物体），保持测试物体、模型、随机种子、训练预算和适应策略不变，比较 Ordinary MLP、Reptile、ANIL 和 Support-matched controls。目标是检验增加独立物体任务是否使元学习的边际收益增长，而不是把更多帧/窗口误当成更多任务。
 - 当前尚未下载/审计新增数据包，尚未运行外部数据实验；本阶段是公开资源调研和预注册式实验规划，不得把候选数据规模当作已验证可用样本数。下一项实际执行任务为 STAG 三个 pressure-only 小包的下载与 metadata inventory。
+
+
+## 阶段十四：STAG 三个额外 pressure-only 数据包审计（2026-11-19）
+
+- 用户上传的 blindfolded_lite、weights_lite、handposes_lite 均已成功读取 metadata.mat 和 README/note。重新读取原有 classification_lite.zip 作为逐项对照。仅读取压力矩阵和元数据；没有读取图像/视频，也没有将原始 ZIP 上传仓库。
+- 四套数据均为 int16、N×32×32 压力矩阵；逐数据集检查得到 548 个随时间变化的物理传感器位置，另有 476 个恒定位置；四套数据的 548 位置 mask 完全一致。每条 recording 内时间戳均非递减。
+- Classification：135,187 帧、82 recordings、26 个物理物体（每物体 3 条）和 4 条 empty_hand recordings；hasValidLabel 共 88,269 帧。
+- Blind-folded：6,686 帧、105 recordings，即 26 个物体各 4 条（104 条）+ 1 条 empty_hand；525 个 hasValidLabel 帧，恰好每条 recording 5 帧；全部 6,686 帧 splitId=1，属于官方 test split。对象名称与 classification 的 26 个非空对象完全一致。决策：不得加入元训练；保留为 held-out condition-shift 描述性资源，但 5 帧不足以稳定估计当前未来 sensor-pair correlation 标签。
+- Weight：11,682 帧、27 recordings，即每个 26 个物理对象各 1 条 + 1 条 empty_hand；每条记录含 graspIndex 0–5 六个主要抓取区间，graspIndex=6 是尾部不完整片段（共 128 帧且 graspValid=0）。graspValid 共 2,301 帧，其中物理对象 2,214、empty_hand 87；六个主要 graspIndex 的有效帧总数分别为 375、389、389、376、388、384，对应每个对象每次抓取中位数约 14–15 帧。决策：这是最有希望的同硬件重复抓取数据，可按完整 grasp interval 做 Support/Query，但先检验 14–15 帧相关标签稳定性；必要时按预先冻结的多抓取聚合策略评估，不得将帧随机拆分。
+- Hand poses：24,037 帧、7 条连续 recording、G1–G7 抓取姿态标签，isGrasp=1 共 7,697 帧；官方 split 17,072 train / 6,965 test。README note 明确每条 recording 含多种不同抓取，不存在 recording 与姿态类别一一对应。决策：不是物体任务数据，不增加元学习任务数；仅可在确有需要时用于压力域抓取姿态混杂因素分析。
+- 四套数据的非空 object names 中，Blind-folded 和 Weight 与 Classification 的 26 个物体名称精确一致。三份新增数据包并未增加任何独立物理物体，因此独立 object task 数仍为 26。
+- 观测压力范围：classification 446–1000；blindfolded 509–991；hand poses 510–992；weight 510–654。尽管传感器 mask 相同，数值分布仍有差异，需保留 train-only scaler 并审查 baseline/calibration，不可直接混合原始压力帧。
+- 完整审计报告：`docs/stag_extension_audit_20261119.md`；机器可读 inventory：`results/data_expansion/stag_extension_inventory_20261119.json`。四个 ZIP 的 SHA-256 和结构统计已写入报告/inventory。
+- 当前未运行新模型实验、未将 blind-folded/weight/hand-pose 数据纳入训练，也未声称新增独立任务。下一步：优先对 Weight 的 6 个抓取区间开展 pressure-only future sensor-pair correlation 标签稳定性审计；同时评估 blind-folded 仅作为描述性 condition-shift 数据是否有可用统计目标。审计通过前不重跑 Reptile/ANIL。
