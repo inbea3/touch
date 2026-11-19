@@ -1,0 +1,120 @@
+name: Reptile selected-config longer validation
+
+on:
+  push:
+    branches:
+      - integration/old-research-assets
+    paths:
+      - ".github/workflows/reptile-selected-validation.yml"
+      - "scripts/run_reptile_meta_learning.py"
+      - "scripts/run_object_coactivation_baselines.py"
+      - "scripts/download_dataset.py"
+      - "scripts/audit_dataset.py"
+      - "results/object_episode_splits/object_split_manifest.json"
+      - "requirements-models.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: reptile-selected-validation-\${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  selected-config-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out research code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install model dependencies
+        run: python -m pip install -r requirements-models.txt
+      - name: Download official pressure-only STAG archive
+        run: python scripts/download_dataset.py --output data/raw/classification_lite.zip
+      - name: Extract and audit metadata
+        run: |
+          python scripts/audit_dataset.py \
+            --archive data/raw/classification_lite.zip \
+            --extract-to data/interim \
+            --output-dir /tmp/stag-data-audit
+          test -s data/interim/metadata.mat
+      - name: Train selected Reptile configuration for 200 meta-iterations
+        run: |
+          python scripts/run_reptile_meta_learning.py \
+            --metadata data/interim/metadata.mat \
+            --split-manifest results/object_episode_splits/object_split_manifest.json \
+            --output-dir /tmp/reptile-selected-validation \
+            --nodes 96 \
+            --sensor-seed 20261116 \
+            --seeds 20261116,20261117,20261118 \
+            --meta-iterations 200 \
+            --meta-batch-size 4 \
+            --inner-steps 10 \
+            --inner-lr 0.001 \
+            --outer-step 0.1 \
+            --adapt-steps 5 \
+            --batch-size 1024 \
+            --weight-decay 0.001 \
+            --bootstrap-reps 5000 \
+            --bootstrap-seed 20261119 \
+            --device cpu
+      - name: Verify and print aggregate-only selected-config result
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("/tmp/reptile-selected-validation")
+          required = [
+              "config.json", "run_summary.json", "task_sampling.csv",
+              "reptile_training_trace.csv", "ordinary_training_trace.csv",
+              "episode_metrics.csv", "object_seed_metrics.csv",
+              "object_metrics.csv", "feature_scaler.npz", "provenance.json",
+              "reptile_seed_20261116.pt", "reptile_seed_20261117.pt",
+              "reptile_seed_20261118.pt", "ordinary_mlp_seed_20261116.pt",
+              "ordinary_mlp_seed_20261117.pt", "ordinary_mlp_seed_20261118.pt",
+          ]
+          missing = [name for name in required if not (out / name).is_file() or (out / name).stat().st_size == 0]
+          if missing:
+              raise SystemExit(f"Missing or empty selected-run outputs: {missing}")
+          summary = json.loads((out / "run_summary.json").read_text())
+          assert summary["meta_train_objects"] == 18
+          assert summary["meta_validation_objects"] == 4
+          assert summary["meta_test_objects"] == 0
+          assert summary["reptile"]["meta_iterations"] == 200
+          assert summary["reptile"]["inner_steps"] == 10
+          assert summary["reptile"]["inner_lr"] == 0.001
+          assert summary["reptile"]["outer_step"] == 0.1
+          assert summary["seeds"] == [20261116, 20261117, 20261118]
+          for runtime in summary["runtime_by_seed"].values():
+              assert runtime["reptile_inner_gradient_updates"] == 8000
+              assert runtime["ordinary_gradient_updates"] == 8000
+              assert runtime["gradient_update_budget_matched"] is True
+              assert runtime["same_initialization_verified_by_seeded_constructor"] is True
+              assert runtime["strict_task_and_recording_access_match"] is False
+          validation = summary["validation_summary"]
+          aggregate = {
+              "by_shots": validation["by_shots"],
+              "paired_mae": [
+                  {"shots": row["shots"], "comparison": row["comparison"],
+                   "positive_favors_reptile": row["positive_favors_reptile"],
+                   "objects_improved": row["objects_improved"],
+                   "bootstrap": row["bootstrap"]}
+                  for row in validation["paired_mae"]
+              ],
+          }
+          print("SELECTED_CONFIG_OUTPUTS_OK")
+          print("AGGREGATE_VALIDATION_SUMMARY_BEGIN")
+          print(json.dumps(aggregate, ensure_ascii=False, indent=2))
+          print("AGGREGATE_VALIDATION_SUMMARY_END")
+          print(json.dumps({
+              "runtime_by_seed": summary["runtime_by_seed"],
+              "provenance": json.loads((out / "provenance.json").read_text()),
+          }, ensure_ascii=False, indent=2))
+          print("RAW_DATA_FEATURES_CHECKPOINTS_SCALERS_AND_OBJECT_LEVEL_FILES_STAYED_ON_EPHEMERAL_RUNNER")
+          print("NO_ACTIONS_ARTIFACT_UPLOADED")
+          PY
