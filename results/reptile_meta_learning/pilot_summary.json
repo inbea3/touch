@@ -1,0 +1,56 @@
+{
+  "run_date": "2026-11-19",
+  "scope": "STAG/HumanGrasp pressure-only; no video or multimodal inputs",
+  "status": "real_data_exploratory_meta_validation_pilot",
+  "split": {
+    "source": "inbea3/touch@integration/old-research-assets/results/object_episode_splits/object_split_manifest.json",
+    "git_blob_sha": "4320d71c77d18383f8130a483565e43c5e379b29",
+    "seed": 20261118,
+    "meta_train_objects": 18,
+    "meta_validation_objects": 4,
+    "meta_test_objects": 4,
+    "meta_test_run": false
+  },
+  "features": {
+    "sensor_count": 96,
+    "sensor_total_active": 548,
+    "sensor_seed": 20261116,
+    "edge_features": 31,
+    "target": "future-valid-frame Pearson correlation"
+  },
+  "model": {
+    "architecture": [64, 32],
+    "optimizer": "Adam",
+    "weight_decay": 0.001,
+    "meta_iterations": 50,
+    "meta_batch_size": 4,
+    "inner_steps": 5,
+    "inner_lr": 0.0005,
+    "outer_step": 0.05,
+    "adapt_steps": 5,
+    "batch_size": 1024,
+    "seeds": [20261116, 20261117, 20261118],
+    "gradient_updates_per_model_per_seed": 1000,
+    "ordinary_vs_reptile_gradient_budget_matched": true
+  },
+  "validation_mae": {
+    "1": {
+      "constant_train_zero_shot": {"mean": 0.13752813293020333, "ci95": [0.12179938722465869, 0.1581227631039886]},
+      "ordinary_mlp_zero_shot": {"mean": 0.12267798614974264, "ci95": [0.11175503395519262, 0.14205791016716668]},
+      "ordinary_mlp_support_adapted": {"mean": 0.124482946622717, "ci95": [0.11252397837944858, 0.1444302953047602]},
+      "reptile_zero_shot": {"mean": 0.16228491353112712, "ci95": [0.14765194147212707, 0.18500987685305903]},
+      "reptile_support_adapted": {"mean": 0.1449999240409274, "ci95": [0.1319147090231559, 0.1680900936667655]},
+      "ordinary_minus_reptile_adapted": {"mean": -0.020516977418210392, "ci95": [-0.024387983858731886, -0.01620579529369219], "objects_favoring_reptile": 0, "n_objects": 4}
+    },
+    "2": {
+      "constant_train_zero_shot": {"mean": 0.13752813293020333, "ci95": [0.12179938722465869, 0.1581227631039886]},
+      "ordinary_mlp_zero_shot": {"mean": 0.12267798614974264, "ci95": [0.11175503395519262, 0.14205791016716668]},
+      "ordinary_mlp_support_adapted": {"mean": 0.12391629702771953, "ci95": [0.1119354176654373, 0.14501827690048702]},
+      "reptile_zero_shot": {"mean": 0.16228491353112712, "ci95": [0.14765194147212707, 0.18500987685305903]},
+      "reptile_support_adapted": {"mean": 0.14438424734672767, "ci95": [0.13065373631974658, 0.16816560839013073]},
+      "ordinary_minus_reptile_adapted": {"mean": -0.02046795031900814, "ci95": [-0.02375579641479194, -0.016706521378889033], "objects_favoring_reptile": 0, "n_objects": 4}
+    }
+  },
+  "interpretation": "This single preselected configuration did not show a Reptile benefit. Reptile adaptation improved its own zero-shot predictions but remained worse than ordinary pooled MLP fine-tuning. Four validation objects and one configuration are insufficient for confirmatory inference or a general rejection of Reptile.",
+  "next_step": "Inspect parameter drift and inner-loop behavior, then run a limited validation-only sensitivity analysis. Do not automatically escalate to MAML."
+}
