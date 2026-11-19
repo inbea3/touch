@@ -268,3 +268,15 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 观测压力范围：classification 446–1000；blindfolded 509–991；hand poses 510–992；weight 510–654。尽管传感器 mask 相同，数值分布仍有差异，需保留 train-only scaler 并审查 baseline/calibration，不可直接混合原始压力帧。
 - 完整审计报告：`docs/stag_extension_audit_20261119.md`；机器可读 inventory：`results/data_expansion/stag_extension_inventory_20261119.json`。四个 ZIP 的 SHA-256 和结构统计已写入报告/inventory。
 - 当前未运行新模型实验、未将 blind-folded/weight/hand-pose 数据纳入训练，也未声称新增独立任务。下一步：优先对 Weight 的 6 个抓取区间开展 pressure-only future sensor-pair correlation 标签稳定性审计；同时评估 blind-folded 仅作为描述性 condition-shift 数据是否有可用统计目标。审计通过前不重跑 Reptile/ANIL。
+
+
+### 阶段十四补充：Weight 重复抓取标签稳定性审查（2026-11-19）
+
+- 已复用 Reptile selected-validation run 44502406385 的固定 96 传感器索引（seed 20261116），并验证其与 Weight 数据 548 个有效传感器位置匹配；使用原管线变换 clip((pressure-500)/150, 0, 1)。
+- 对 26 个物理物体，每个物体的 graspIndex 0–5 六个完整抓取区间，按时间排序取前 5 个 graspValid 帧为早期输入，其余 6–10 帧估计未来 Pearson 相关；每次抓取有效帧 11–15 个。graspIndex=6 不含有效抓取帧，排除。
+- 每物体穷举 10 个唯一 3-grasp vs 3-grasp 划分，共 260 个嵌套比较；先在物体内平均，再以 26 个物体为单位做 5,000 次 Bootstrap。
+- 三抓取对三抓取的 edge-correlation Spearman 均值 0.0504（物体级均值中位数 0.0425，95% object bootstrap CI [0.0366, 0.0660]）；r≥0.7 正边 Jaccard 均值 0.0406（中位数 0.0361，CI [0.0283, 0.0541]）。r≥0.5 Jaccard 均值 0.0690；r≥0.9 Jaccard 均值 0.0401（44 个分割因双方均无正边而未定义）。
+- 单次抓取间比较更低：390 个嵌套抓取对的 Spearman 均值约 0.0026，r≥0.7 Jaccard 均值约 0.0112。使用完整 graspValid 窗口（包含最早五帧，作为非因果敏感性诊断）时，三对三 Spearman 均值仍约 0.0559、Jaccard 约 0.0411。
+- 解释：重复抓取确实增加了同一物体内的 episode 数，但当前未来传感器相关矩阵在抓取组之间表现出很低的一致性。原因可能包括短窗口估计噪声、抓取间接触状态变化或真实关系变化；本审计不能区分这些原因。
+- 决策：暂不将 Weight 的六个 grasp interval 当成可交换 Recording 直接加入 Reptile/ANIL 训练，也不声称其解决独立任务不足。下一步仅做压力通道方差/有效覆盖诊断和收缩协方差估计器敏感性；如果没有可解释且预先规定的聚合目标，则将 Weight 保留为重复抓取变异性分析/负向可行性结果。
+- 报告：`docs/weight_grasp_label_stability_20261119.md`；机器可读结果：`results/data_expansion/weight_grasp_label_stability_20261119.json`。未训练模型、未使用视频或其他模态。
