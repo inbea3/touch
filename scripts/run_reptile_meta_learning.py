@@ -536,8 +536,28 @@ def parse_args(argv=None):
 def main(argv=None):
     args = parse_args(argv)
     summary = run(args)
-    print(json.dumps({"validation_summary": summary["validation_summary"],
-        "meta_test_exploratory_summary": summary["meta_test_exploratory_summary"],
+    validation = summary["validation_summary"]
+    aggregate_only = {
+        "by_shots": validation["by_shots"],
+        "paired_mae": [
+            {"shots": row["shots"], "comparison": row["comparison"],
+             "positive_favors_reptile": row["positive_favors_reptile"],
+             "objects_improved": row["objects_improved"],
+             "bootstrap": row["bootstrap"]}
+            for row in validation["paired_mae"]
+        ],
+    }
+    print(json.dumps({"validation_summary_aggregate_only": aggregate_only,
+        "meta_test_exploratory_summary": None if summary["meta_test_exploratory_summary"] is None else {
+            "by_shots": summary["meta_test_exploratory_summary"]["by_shots"],
+            "paired_mae": [
+                {"shots": row["shots"], "comparison": row["comparison"],
+                 "positive_favors_reptile": row["positive_favors_reptile"],
+                 "objects_improved": row["objects_improved"],
+                 "bootstrap": row["bootstrap"]}
+                for row in summary["meta_test_exploratory_summary"]["paired_mae"]
+            ],
+        },
         "runtime_by_seed": summary["runtime_by_seed"]}, ensure_ascii=False, indent=2))
 
 if __name__ == "__main__":
