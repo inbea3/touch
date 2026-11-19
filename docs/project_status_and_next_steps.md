@@ -222,3 +222,20 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - Reptile Spearman 通常略高于 Ordinary MLP，但 MAE/RMSE 不占优。排序相关与绝对误差需分别报告。
 - 完整结果见 results/reptile_meta_learning/adaptation_policy_comparison_20261119.md。Artifact reptile-adaptation-policy-comparison-44509113507-1，SHA-256 41910cb0e841553b77f6b507f79429a71611e2bc0bf7da09b5b1647fb3198a97，保留至 2026-12-19；包含五个 CSV、summary JSON 和数据审计摘要，不含原始 STAG 压力帧。
 - 研究判断：保守适应未能揭示 Reptile 的实质优势；不再在同一四个验证物体上进行更广泛的 Reptile 超参数搜索。若继续元学习，建议研究 Query-aware 外循环目标（ANIL/MAML 风格），使元训练目标更贴近跨 Recording Query 泛化；先制定与普通 MLP 公平匹配的梯度预算和验证协议，再进行小规模探索。当前 18/4/4 数据划分不能提供 untouched confirmatory test，最终论文必须明确这一限制。
+
+
+## 阶段十二最新进度（2026-11-19：First-order ANIL 三随机种子实验已完成）
+
+- 已冻结协议 `docs/anil_meta_learning_protocol.md`，实现 `scripts/run_anil_meta_learning.py`，增加 `tests/test_anil_meta_learning.py`，并配置 `.github/workflows/anil-meta-learning.yml`。
+- GitHub Actions run `44511962054` 成功；ANIL 编译、五项核心单元测试、reference checkpoint/scaler 核验、官方 pressure-only 数据下载与审计、正式训练、输出断言和 artifact 上传全部通过。
+- 算法为 first-order ANIL：每个任务只在 Support Recording 上更新最后一层回归头 9 步；随后使用完整 Query Recording 的等 Recording 权重 MSE 计算 Query 梯度，将一阶梯度转移至共享初始化；每个 meta-batch 更新一次外循环参数。未计算二阶导数。
+- 固定配置：200 meta-iterations × meta-batch 4 × 3 seeds；inner/outer lr=0.001；inner head steps=9；batch size=1024；weight decay=0.001；评估使用 5 步 head-only adaptation。每 seed 为 7,200 次 Support head 更新 + 800 次 Query gradient evaluation = 8,000 次 backward pass。
+- 对照包括：ANIL；在 ANIL 相同对象/Support Recording episode 调度上训练的 Support-only MLP（7,200 次全网络更新）；复用原 selected-validation 200×3 Reptile checkpoint；复用普通 pooled MLP checkpoint。四种初始化在相同穷举 Validation Episode 上，以 zero-shot 和相同 5-step head-only 算子评估。
+- 结果共 864 条 episode-query-method-policy 记录、192 条 object-seed 汇总、64 条 object-level 汇总、16 条方法/策略/shot 汇总、56 条配对物体差值；独立分析单位始终是 4 个 Meta-validation 物体。Meta-test 没有加载或评估。
+- 1-shot MAE：ANIL zero-shot 0.123058、5-step head-only 0.123608；Support-only schedule 0.123304 / 0.123081；Reptile 0.123225 / 0.123674；ordinary pooled MLP 0.122340 / 0.122418。
+- 2-shot MAE：ANIL zero-shot 0.123058、5-step head-only 0.123342；Support-only schedule 0.123304 / 0.123182；Reptile 0.123225 / 0.123441；ordinary pooled MLP 0.122340 / 0.122327。
+- ANIL 相对 Support-only schedule 的 zero-shot MAE 优势仅约 0.000246，四物体 bootstrap 区间跨 0；ANIL 未超过 ordinary pooled MLP。5-step head-only 适应使 ANIL 1-shot MAE 平均增加 0.000550，2-shot 增加 0.000284，未显示稳定适应收益。Reptile 与 ANIL MAE 接近，Reptile Spearman 较高；ordinary pooled MLP 的 MAE/RMSE 整体最佳。
+- ANIL 的训练 Query loss 在三种子中均下降至约 0.025 左右，说明 Query-aware 优化过程执行并收敛；但训练 Query loss 下降没有转化为优于 pooled MLP 的验证泛化表现。
+- 完整报告：`results/reptile_meta_learning/anil_first_order_validation_20261119.md`。Artifact `anil-meta-learning-44511962054-1`，SHA-256 `635bec289f39fb2986795e31b07a104407e2ab23dd18b5129d3f55c014151b78`，保留至 2026-12-19；含模型权重、训练 trace、任务调度、Episode/物体级指标、配对差值、summary 和数据审计，不含原始 STAG 压力帧。
+- 研究决策：ANIL 是有意义的 Query-aware 元学习对照，但当前结果不支持其优于普通 MLP。不要立即开展二阶 MAML，也不要在相同四个验证物体上继续广泛调参。若要形成确认性元学习结论，下一步优先获取新增独立物体/Recording 或外部 pressure-only 数据；若无法获取，应将论文定位为探索性跨物体少样本适应研究，诚实报告 Reptile/ANIL 未带来可靠的预测增益。
+- GNN 结构增量实验继续暂缓，除非新的独立数据或后续证据显示图结构建模具有清晰的额外研究价值。
