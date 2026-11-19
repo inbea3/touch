@@ -12,7 +12,7 @@ from run_reptile_meta_learning import (
     EdgeMLP, sample_episode, support_batch_loss, full_support_loss,
     apply_reptile_update, train_reptile, train_pooled_mlp, adapt_model,
     build_tasks, aggregate_by_object, aggregate_seeds_by_object,
-    validate_manifest,
+    validate_manifest, set_seed,
 )
 
 
@@ -89,8 +89,15 @@ class ReptileMetaLearningTests(unittest.TestCase):
             support = set(map(int, row["support_recording_ids"].split(";")))
             query = set(map(int, row["query_recording_ids"].split(";")))
             self.assertFalse(support & query)
-        self.assertTrue(any(float(v.abs().sum()) > 0 for v in model.state_dict().values()))
+        self.assertTrue(all(row["norm_of_mean_task_displacement"] > 0 for row in trace))
         self.assertTrue(all(row["gradient_updates_this_iteration"] == 4 for row in trace))
+
+    def test_same_seed_produces_same_initial_mlp_weights(self):
+        set_seed(2026)
+        ordinary_init = EdgeMLP(5).state_dict()
+        set_seed(2026)
+        reptile_init = EdgeMLP(5).state_dict()
+        self.assertTrue(all(torch.equal(ordinary_init[k], reptile_init[k]) for k in ordinary_init))
 
     def test_pooled_baseline_gradient_budget_is_explicit(self):
         data = synthetic_data(n_objects=3)
