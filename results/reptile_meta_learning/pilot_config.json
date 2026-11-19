@@ -1,0 +1,20 @@
+{
+  "metadata_file": "metadata.mat",
+  "split_manifest": "results/object_episode_splits/object_split_manifest.json",
+  "output_dir": "results/reptile_meta_learning",
+  "nodes": 96,
+  "sensor_seed": 20261116,
+  "seeds": [20261116, 20261117, 20261118],
+  "meta_iterations": 50,
+  "meta_batch_size": 4,
+  "inner_steps": 5,
+  "inner_lr": 0.0005,
+  "outer_step": 0.05,
+  "adapt_steps": 5,
+  "batch_size": 1024,
+  "weight_decay": 0.001,
+  "bootstrap_reps": 5000,
+  "bootstrap_seed": 20261119,
+  "device": "cpu",
+  "include_meta_test": false
+}
