@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from run_reptile_meta_learning import (
     EdgeMLP, sample_episode, support_batch_loss, full_support_loss,
     apply_reptile_update, train_reptile, train_pooled_mlp, train_support_matched_mlp, adapt_model,
-    build_tasks, aggregate_by_object, aggregate_seeds_by_object,
+    build_tasks, aggregate_by_object, aggregate_seeds_by_object, summarize,
     validate_manifest, set_seed, initial_model_sha256,
 )
 
@@ -181,6 +181,26 @@ class ReptileMetaLearningTests(unittest.TestCase):
         obj = aggregate_seeds_by_object(obj_seed)
         self.assertEqual(len(obj), 1)
         self.assertEqual(obj[0]["object_id"], 7)
+
+    def test_paired_summary_compares_both_full_data_and_support_matched_baselines(self):
+        rows = []
+        for oid in (1, 2, 3, 4):
+            for model, mae in (
+                ("ordinary_mlp_support_adapted", 0.12 + oid * .001),
+                ("support_matched_mlp_support_adapted", 0.13 + oid * .001),
+                ("reptile_support_adapted", 0.125 + oid * .001),
+            ):
+                rows.append({"split": "meta_validation", "object_id": oid,
+                             "shots": 1, "model": model, "mae": mae,
+                             "rmse": mae + .02, "spearman": .3})
+        result = summarize(rows, seed=5, n_boot=100)
+        self.assertEqual(len(result["paired_mae"]), 2)
+        baselines = {row["baseline_model"] for row in result["paired_mae"]}
+        self.assertEqual(baselines, {
+            "ordinary_mlp_support_adapted",
+            "support_matched_mlp_support_adapted",
+        })
+        self.assertTrue(all(row["bootstrap"]["n_objects"] == 4 for row in result["paired_mae"]))
 
     def test_manifest_validation_requires_three_recordings_per_object(self):
         manifest = {"object_splits": {"meta_train": [], "meta_validation": [], "meta_test": []}}
