@@ -50,12 +50,24 @@ def summarize_run(summary: dict, config: dict) -> dict:
     for shots in (1, 2):
         reptile = by_shots[str(shots)]["reptile_support_adapted"]["mae"]
         ordinary = by_shots[str(shots)]["ordinary_mlp_support_adapted"]["mae"]
+        support_matched = by_shots[str(shots)]["support_matched_mlp_support_adapted"]["mae"]
         row[f"reptile_mae_{shots}shot"] = reptile["mean"]
         row[f"reptile_ci95_low_{shots}shot"] = reptile["ci95_low"]
         row[f"reptile_ci95_high_{shots}shot"] = reptile["ci95_high"]
         row[f"ordinary_mae_{shots}shot"] = ordinary["mean"]
         row[f"ordinary_ci95_low_{shots}shot"] = ordinary["ci95_low"]
         row[f"ordinary_ci95_high_{shots}shot"] = ordinary["ci95_high"]
+        row[f"support_matched_mae_{shots}shot"] = support_matched["mean"]
+        row[f"support_matched_ci95_low_{shots}shot"] = support_matched["ci95_low"]
+        row[f"support_matched_ci95_high_{shots}shot"] = support_matched["ci95_high"]
+        paired = next(
+            x for x in summary["validation_summary"]["paired_mae"]
+            if x["shots"] == shots and x["baseline_model"] == "support_matched_mlp_support_adapted"
+        )
+        row[f"support_matched_minus_reptile_mean_{shots}shot"] = paired["bootstrap"]["mean"]
+        row[f"support_matched_minus_reptile_ci95_low_{shots}shot"] = paired["bootstrap"]["ci95_low"]
+        row[f"support_matched_minus_reptile_ci95_high_{shots}shot"] = paired["bootstrap"]["ci95_high"]
+        row[f"support_matched_objects_favoring_reptile_{shots}shot"] = paired["objects_improved"]
     row["selection_score_equal_shot_mae"] = selection_score(row)
     row["n_validation_objects"] = 4
     row["n_seeds"] = len(summary["seeds"])
@@ -67,7 +79,12 @@ def summarize_run(summary: dict, config: dict) -> dict:
         for x in summary["runtime_by_seed"].values()
     )
     row["access_difference_disclosed"] = not row["strict_task_recording_access_match"]
-    if not row["gradient_update_budget_matched"] or not row["access_difference_disclosed"]:
+    row["support_matched_access_schedule_verified"] = all(
+        x["support_matched_task_and_recording_access_match"]
+        for x in summary["runtime_by_seed"].values()
+    )
+    if (not row["gradient_update_budget_matched"] or not row["access_difference_disclosed"]
+            or not row["support_matched_access_schedule_verified"]):
         raise ValueError("Unexpected baseline budget/access audit result")
     return row
 
