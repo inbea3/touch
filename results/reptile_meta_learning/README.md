@@ -1,14 +1,18 @@
-# Stage 9 Reptile pilot artifacts
+# Stage 9 Reptile implementation status
 
-Real STAG/HumanGrasp pressure-only run, 2026-11-19. No synchronized video or multimodal data were used.
+This directory currently stores the proposed pilot configuration and data provenance checks only. **No Reptile training run has been executed and no performance result is available.**
 
-Tracked in this directory:
-- `pilot_summary.json`: configuration, validation MAE, object-bootstrap intervals and interpretation.
-- `pilot_object_metrics.csv`: object-level metrics averaged across the three random seeds.
-- `pilot_config.json` and `pilot_provenance.json`: run configuration and data/code provenance.
+- `pilot_config.json`: planned smoke/pilot settings; not an executed run record.
+- `pilot_provenance.json`: archive and extracted MAT-file integrity hashes verified locally; it explicitly records that model training and tests have not been run.
 
-The complete run bundle (episode-level metrics, task sampling, training traces, train-only feature scaler and model checkpoints) is retained separately with the session artifact package. It is not duplicated in Git history as binary model files.
+Earlier unverified pilot summary and object-metric files were removed. Do not cite or use the previously circulated MAE values.
 
-Configuration: 50 meta-iterations, meta-batch 4, five inner steps, inner learning rate 0.0005, outer step 0.05, adaptation steps 5, batch size 1024, and seeds 20261116/20261117/20261118. Both methods received exactly 1,000 gradient updates per seed.
+Before a valid run can be recorded:
+1. Obtain a local checkout of `integration/old-research-assets`.
+2. Install and record dependencies.
+3. Run syntax checks and all 11 unit tests.
+4. Run a real-data smoke test against the supplied pressure-only `metadata.mat`.
+5. Audit the matched MLP/Reptile initialization, data exposure and gradient/compute budgets.
+6. Only then run the multi-seed Meta-validation experiment and save actual logs, checkpoints, task samples, episode/object metrics, scaler and hashes.
 
-Only the four fixed Meta-validation objects were evaluated. The old Meta-test objects were not run. Since all 26 objects were used in prior stages, this validation is exploratory, not confirmatory. Reptile did not outperform the ordinary MLP fine-tuning baseline in this first configuration; do not interpret this single pilot as a universal rejection of Reptile.
+The fixed 18/4/4 object split has been used in prior stages. Any future Meta-validation/Meta-test result on it remains exploratory, not an untouched confirmatory evaluation.
