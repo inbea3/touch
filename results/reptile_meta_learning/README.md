@@ -22,7 +22,7 @@ The 27-configuration Meta-validation sensitivity grid completed successfully in 
 
 The selected configuration was K=10, inner LR=0.001, outer step=0.1, with equal-shot mean Reptile MAE 0.128356. For this selected cell, ordinary MLP's equal-shot mean MAE was 0.124438. Across all 27 configurations, Reptile's adapted MAE was higher than ordinary MLP in both 1-shot and 2-shot settings. This is an exploratory negative result, not a universal rejection of meta-learning.
 
-A longer 200-meta-iteration run of the selected configuration is now queued to check whether the result is merely due to short meta-training. Meta-test is excluded from tuning and remains exploratory because all 26 objects were used in earlier stages.
+A longer 200-meta-iteration run of the selected configuration is running in GitHub Actions run `44494923410` to check whether the grid result is merely due to short meta-training. Meta-test is excluded from tuning and remains exploratory because all 26 objects were used in earlier stages.
 
 ## Data handling and citation
 
