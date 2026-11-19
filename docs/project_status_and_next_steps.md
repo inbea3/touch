@@ -199,7 +199,7 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 ## 阶段九最新进度（2026-11-19：Reptile 初版与首轮真实数据 pilot）
 
 - 已实现 `scripts/run_reptile_meta_learning.py`，使用 PyTorch 64/32 MLP 和一阶 Reptile 参数位移更新。
-- 已新增 `tests/test_reptile_meta_learning.py`，10 项单元测试全部通过，覆盖 Support/Query Recording 隔离、Recording 等权损失、任务等权参数位移、普通 MLP 梯度预算匹配、适应过程和物体级汇总。
+- 已新增 `tests/test_reptile_meta_learning.py`，11 项单元测试全部通过，覆盖 Support/Query Recording 隔离、Recording 等权损失、任务等权参数位移、普通 MLP 梯度预算匹配、适应过程和物体级汇总。
 - 已恢复此前上传的 `classification_lite.zip`，SHA-256 与数据审查记录一致；ZIP 完整性检查通过，解压得到真实 `metadata.mat`。
 - 首轮真实 pilot：固定 96/548 传感器、18 个 meta-train 物体、4 个 meta-validation 物体；50 个 meta-iterations、meta-batch=4、inner steps=5、inner lr=0.0005、outer step=0.05；3 个随机种子。普通 MLP 与 Reptile 每个种子各执行 1,000 次梯度更新，更新预算匹配。
 - 验证集 1-shot MAE：普通 MLP 微调 0.12448，Reptile 微调 0.14500；2-shot MAE：普通 MLP 微调 0.12392，Reptile 微调 0.14438。4/4 验证物体均未显示 Reptile 优势。
