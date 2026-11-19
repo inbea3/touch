@@ -119,6 +119,16 @@ jobs:
               "runtime_by_seed": summary["runtime_by_seed"],
               "provenance": json.loads((out / "provenance.json").read_text()),
           }, ensure_ascii=False, indent=2))
-          print("RAW_DATA_FEATURES_CHECKPOINTS_SCALERS_AND_OBJECT_LEVEL_FILES_STAYED_ON_EPHEMERAL_RUNNER")
-          print("NO_ACTIONS_ARTIFACT_UPLOADED")
+          print("SELECTED_VALIDATION_OUTPUTS_VERIFIED")
+          print("RAW_STAG_DATA_NOT_INCLUDED_IN_ARTIFACT")
           PY
+      - name: Upload reproducible selected-validation outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reptile-selected-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            /tmp/reptile-selected-validation/
+            /tmp/stag-data-audit/
+          if-no-files-found: warn
+          retention-days: 30
