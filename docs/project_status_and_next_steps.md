@@ -84,7 +84,7 @@
 ## 三、尚未完成的内容
 
 1. Reptile 初版实现已提交；12 项单元测试已由 GitHub Actions 实际执行并通过，pressure-only 真实数据 smoke test 也已通过。
-2. 完整超参数敏感性网格和正式多随机种子实验尚未运行；smoke test 仅用于验证数据管线与训练可执行性，不作为性能证据。
+2. 27 组、三随机种子的敏感性网格已完成；所有配置的 Reptile 1-shot/2-shot MAE 均高于普通 MLP。当前正在追加最优配置的 200-iteration 长程验证，结果仍属探索性。
 3. 尚未完成输入帧连续性和真实时间跨度敏感性分析。
 4. 当前主预测实验只使用 96/548 传感器，尚未完成 192 或完整 548 规模对照。
 5. 尚未完成 GNN 的结构增量实验。
@@ -196,5 +196,7 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 数据版本核验：ZIP SHA-256 为 `ce0f27ae87e8ce2ec405f756dfe278b0b8011ef12e9de93e468b7ef31ad76c58`；`metadata.mat` SHA-256 为 `19062ed3415df6e21ae055c5149315a5350652a27d59ab55fed74e395f2f1378`；元数据包含 135,187 帧，pressure-only 字段完整。
 - 公平性审计：两种方法使用同一架构、同一随机种子初始化、同一 Meta-train 物体池和相同梯度更新次数；但 Reptile 按任务 Episode 使用 1/2 条 Support Recording 连续更新，普通 pooled MLP 每步从全部训练 Recording 抽样，因此任务/Recording 访问序列并非严格相同。代码现记录初始化 SHA-256、访问次数和这一差异，不宣称严格数据暴露等价。
 - Smoke test 输出只作为执行诊断；4 个 Meta-validation 物体和单次极短训练不足以支持性能推断。此前未核验的 pilot 数值与对象级结果已删除，不得引用。
-- 27 组超参数敏感性网格（K、inner_lr、outer_step 各 3 个水平；每组 3 个随机种子）已在 GitHub Actions run `44493070529` 启动，当前等待完成。仅使用 Meta-validation 物体级 Query MAE 选参；随后冻结配置，再开展较长训练与报告。
+- 27 组超参数敏感性网格已在 GitHub Actions run `44493070529` 成功完成。预先规定的选择规则选出 K=10、inner_lr=0.001、outer_step=0.1；1-shot/2-shot 等权 Reptile MAE 为 0.128356，普通 MLP 为 0.124438。27/27 组中 Reptile 的两种 shot MAE 均高于普通 MLP。
+- 聚合结果已保存至 `results/reptile_meta_learning/sensitivity_grid_summary.json` 和 `sensitivity_grid_summary.csv`。逐对象/逐 Episode 指标和模型权重仍未上传。
+- 正在执行选中配置的 200-iteration、三随机种子长程验证，以检查 50-iteration 网格结果是否受训练长度影响；Meta-test 仍不参与。
 - 研究范围继续保持 pressure-only；沿用固定 18/4/4 划分。Meta-validation/Meta-test 均属于探索性评估，不能称为独立确认性测试。原始数据、逐对象/逐 Episode 文件、scaler 和模型权重不上传到公开仓库或 Actions artifacts。
