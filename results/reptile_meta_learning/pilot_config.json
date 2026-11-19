@@ -21,6 +21,6 @@
   "bootstrap_seed": 20261119,
   "device": "cpu",
   "include_meta_test": false,
-  "status": "planned_full_sensitivity_run_not_executed",
-  "notes": "This is the planned 50-iteration, three-seed sensitivity configuration, not the executed smoke configuration. A separate real-data smoke test (one seed, two meta-iterations) passed in GitHub Actions run 44491723400."
+  "status": "executed_as_sensitivity_grid",
+  "notes": "The 27-configuration sensitivity grid (3 seeds/config, 50 meta-iterations) completed in GitHub Actions run 44493070529. This file records the pre-specified base settings; the selected cell was K=10, inner_lr=0.001, outer_step=0.1."
 }
