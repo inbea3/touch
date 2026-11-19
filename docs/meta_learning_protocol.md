@@ -79,7 +79,11 @@ ANIL 作为后续扩展：只有在明确共享特征提取器/任务头结构�
 - Support shots：1、2；
 - 固定随机种子至少 3 个，用于检查训练随机性。
 
-上述数值是待验证的初始搜索范围，不是已经确定的最优参数。超参数选择只看 Meta-validation 的物体级 Query MAE；不得使用 Meta-test Query 选参。先运行 smoke test 检查数值稳定、参数确实更新、Support/Query 无交叉，再启动完整实验。
+上述数值是待验证的初始搜索范围，不是已经确定的最优参数。首轮按完整 3×3×3 网格执行 27 组配置：K ∈ {1,5,10}、α ∈ {1e-4,5e-4,1e-3}、ε ∈ {0.01,0.05,0.1}；每组 meta-batch=4、3 个固定随机种子、50 个 meta-iterations。每组普通 pooled MLP 的梯度更新次数与对应 Reptile 配置严格相同。
+
+超参数选择只看 Meta-validation 的物体级 Query MAE；不得使用 Meta-test Query 选参。预先规定选择指标为 1-shot 与 2-shot 的 Reptile Support-adapted MAE 等权平均；先在每个物体内平均三个随机种子，再对四个验证物体等权平均。选择该指标最低的配置；不以 Meta-test 或逐边指标调参。随后可对冻结配置运行较长训练，但结果仍属探索性验证。
+
+先运行 smoke test 检查数值稳定、参数确实更新、Support/Query 无交叉，再启动完整网格。
 
 ## 8. 评价指标与统计分析
 
@@ -115,9 +119,14 @@ D_i = MAE(i, ordinary fine-tuning) - MAE(i, Reptile fine-tuning)
 
 ## 11. 实现状态与执行门槛
 
-- 已提交 `scripts/run_reptile_meta_learning.py` 与 `tests/test_reptile_meta_learning.py`。测试文件包含 11 个测试函数，但尚未在当前执行环境实际运行；不得写成“测试通过”。
-- 已验证原始 ZIP 完整性与数据文件 SHA-256，并确认 `metadata.mat` 中存在预期 pressure-only 字段。数据加载/特征提取的完整脚本流程仍待执行。
-- Reptile 训练、普通 MLP 公平对照、Meta-validation 评估和统计汇总均尚未完成。当前不存在可用于论文的 Reptile 实验指标。
-- 曾经暂存的 pilot MAE 数值及对象级结果并非由可审计运行生成，已从仓库移除并作废。任何后续结果必须由实际运行脚本产生，并保存配置、日志、checkpoint、逐 Episode/物体指标和数据/代码哈希。
-- 在执行正式实验前，必须先通过语法检查、全部单元测试和真实数据 smoke test；任何阶段失败都应先修复，不得继续报告性能结果。
+- 已提交 `scripts/run_reptile_meta_learning.py` 与 `tests/test_reptile_meta_learning.py`；12 项单元测试已在 GitHub Actions 中执行通过。新增初始化哈希与访问预算审计后，需以最新提交的 CI 结果为准。
+- 官方 pressure-only 数据已在临时执行环境下载并完成 smoke test：元数据加载、特征提取、Reptile 与 pooled MLP 训练、验证评估和输出文件完整性检查均成功。Smoke 配置只有 1 个种子和 2 次 meta-iterations，不是正式性能实验。
+- 代码记录同种子初始化 SHA-256、梯度更新次数、Reptile task Episode / Support Recording 访问次数及 pooled baseline Recording 抽样次数。两方法梯度步数、初始化和训练物体池匹配，但任务/Recording 访问序列并非严格相同；报告中不得声称严格数据暴露等价。
+- 下一步执行 27 组预先规定的 Meta-validation 超参数网格，每组 3 个随机种子；仅按 1-shot/2-shot 等权的物体级 Reptile Support-adapted MAE 选择配置。Meta-test 不参与调参。
+- Smoke test 的短程指标不用于论文性能结论。此前未核验的 pilot MAE 数值和对象级结果已从仓库移除并作废。
+- 原始压力数据、提取特征、scaler、模型权重、逐 Episode 和逐对象指标仅留在受控临时执行环境，不上传公开仓库或 Actions artifacts。对外报告需引用 STAG 原始论文。
 
+
+## 12. 数据集引用
+
+Subramanian Sundaram, Petr Kellnhofer, Yunzhu Li, Jun-Yan Zhu, Antonio Torralba, and Wojciech Matusik. “Learning the signatures of the human grasp using a scalable tactile glove.” *Nature*, 2019. DOI: 10.1038/s41586-019-1234-z.
