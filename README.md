@@ -53,6 +53,7 @@
 - [第八阶段：重复物体级划分稳健性协议](docs/repeated_object_holdout_protocol.md)
 - [第八阶段：重复物体级交叉验证协议](docs/repeated_object_cv_protocol.md)
 - [第八阶段：重复物体级交叉验证结果](docs/repeated_object_cv_results.md)
+- [阶段九：Reptile 元学习协议（预注册草案）](docs/meta_learning_protocol.md)
 
 可选安装与运行：
 
