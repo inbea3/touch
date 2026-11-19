@@ -113,8 +113,28 @@ D_i = MAE(i, ordinary fine-tuning) - MAE(i, Reptile fine-tuning)
 - 若 Reptile 没有稳定增量，不自动升级为 MAML；可分析 ANIL 是否有清晰动机，否则将论文重点收敛为跨物体结构化预测与少样本适应的负面/边界结果。
 - 本阶段结果不能证明因果协同或完整 548 传感器阵列性能。
 
-## 11. 执行状态
+## 11. 实现与真实数据 pilot 状态
 
-当前已完成：阶段七/八数据管线和 MLP 基线代码审查；确认现有分支尚无 Reptile、ANIL、MAML 实现。
+- 已实现 `scripts/run_reptile_meta_learning.py`，采用 PyTorch 64/32 MLP 和一阶 Reptile 参数位移更新。
+- 已新增 `tests/test_reptile_meta_learning.py`；10 项单元测试全部通过。
+- 真实数据来源为此前上传的 `classification_lite.zip`，ZIP 完整性检查通过，提取的 `metadata.mat` 用于真实 pressure-only 特征构造与训练。
+- 普通 MLP 与 Reptile 使用相同随机初始化、网络结构、meta-train 物体、Adam 学习率/weight decay 和每个种子的总梯度更新次数；评估时使用相同 Support Recording、适应步数和优化器。
+- Reptile 任务采样以物体均匀抽样；Support 内每条 Recording 的 MSE 等权，任务参数位移在 meta-batch 内等权平均。Query Recording 不参与内循环或外循环更新。
+- 首轮 pilot 只评估 Meta-validation，不运行 Meta-test；由于此前阶段已使用全部 26 个物体，任何旧划分评估均为探索性结果。
 
-当前未完成：Reptile 训练代码、测试、真实数据 smoke test、超参数选择和正式实验。当前代码连接仅提供 GitHub 文件读写，且仓库未包含本地 metadata.mat 数据文件；本会话可以完成协议/代码提交与静态测试设计，但不能声称已运行真实 STAG 元学习实验。
+## 12. 首轮真实数据 pilot（2026-11-19）
+
+配置：96/548 传感器（seed=20261116），固定 18/4/4 划分（seed=20261118），31 维边特征，64/32 MLP，50 meta-iterations，meta-batch=4，inner steps=5，inner lr=0.0005，outer step=0.05，adapt steps=5，batch size=1024，weight decay=0.001。随机种子为 20261116、20261117、20261118。每个种子 Reptile 和普通 pooled MLP 均执行 1,000 次梯度更新。
+
+| 方法 | 1-shot MAE | 2-shot MAE |
+|---|---:|---:|
+| 普通 MLP 零样本 | 0.12268 | 0.12268 |
+| 普通 MLP Support 微调 | 0.12448 | 0.12392 |
+| Reptile 零样本 | 0.16228 | 0.16228 |
+| Reptile Support 微调 | 0.14500 | 0.14438 |
+
+普通 MLP 微调 MAE 减 Reptile 微调 MAE 的配对差值（正值表示 Reptile 更好）：1-shot -0.02052，2-shot -0.02047。四个 Meta-validation 物体均未显示 Reptile 优势。物体 Bootstrap 95% 区间分别为 [-0.02439, -0.01621] 和 [-0.02376, -0.01671]；由于统计单位仅为 4 个物体，这些区间仅用于探索性描述。
+
+当前配置下，Reptile 零样本和适应后误差均高于普通 MLP。该结果不支持宣称 Reptile 有效，但单一配置、50 个外循环迭代和 4 个验证物体不足以否定 Reptile 的所有可能设置。本轮没有进行超参数搜索，也没有运行 Meta-test。
+
+完整结果、任务采样、训练曲线、逐 Episode/物体指标、scaler 和 checkpoint 保存在 `results/reptile_meta_learning/`。下一步先分析参数位移和适应行为，再做有限的验证集超参数敏感性分析；不自动升级为 MAML。
