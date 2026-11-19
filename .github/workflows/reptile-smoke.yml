@@ -79,7 +79,10 @@ jobs:
           assert summary["meta_train_objects"] == 18
           assert summary["meta_validation_objects"] == 4
           assert summary["meta_test_objects"] == 0
-          assert summary["runtime_by_seed"]["20261116"]["gradient_update_budget_matched"] is True
+          runtime = summary["runtime_by_seed"]["20261116"]
+          assert runtime["gradient_update_budget_matched"] is True
+          assert runtime["same_initialization_verified_by_seeded_constructor"] is True
+          assert runtime["strict_task_and_recording_access_match"] is False
           validation = summary["validation_summary"]
           aggregate_only = {
               "by_shots": validation["by_shots"],
