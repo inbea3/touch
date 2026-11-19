@@ -11,7 +11,7 @@
   "pressure_only": true,
   "video_used": false,
   "code_commit": "e03a45ab9cc297db182d66b27f336be09606a41a",
-  "unit_tests": "12/12 passed in GitHub Actions run 44491690876",
+  "unit_tests": "17/17 Reptile implementation and sensitivity-grid tests passed in GitHub Actions run 44493081143",
   "status": "real_data_smoke_test_passed_full_experiment_pending",
   "archive_integrity_verified": true,
   "metadata_integrity_verified": true,
@@ -36,7 +36,7 @@
   "full_sensitivity_grid_executed": false,
   "full_multi_seed_experiment_executed": false,
   "confirmatory_evaluation": false,
-  "unit_test_run_id": 44491690876,
+  "unit_test_run_id": 44493081143,
   "initialization_sha256": "8a023689716a581df3e62e56b95d7e576839815f5155186ad40e9c4dfbcdee79",
   "strict_task_and_recording_access_match": false,
   "gradient_update_budget_matched": true
