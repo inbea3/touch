@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: reptile-selected-validation-\${{ github.ref }}
+  group: reptile-selected-validation-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
