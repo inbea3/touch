@@ -71,11 +71,13 @@ jobs:
           out = Path("/tmp/reptile-selected-validation")
           required = [
               "config.json", "run_summary.json", "task_sampling.csv",
-              "reptile_training_trace.csv", "ordinary_training_trace.csv",
+              "reptile_training_trace.csv", "ordinary_training_trace.csv", "support_matched_training_trace.csv",
               "episode_metrics.csv", "object_seed_metrics.csv",
               "object_metrics.csv", "feature_scaler.npz", "provenance.json",
               "reptile_seed_20261116.pt", "reptile_seed_20261117.pt",
-              "reptile_seed_20261118.pt", "ordinary_mlp_seed_20261116.pt",
+              "reptile_seed_20261118.pt", "support_matched_mlp_seed_20261116.pt",
+              "support_matched_mlp_seed_20261117.pt", "support_matched_mlp_seed_20261118.pt",
+              "ordinary_mlp_seed_20261116.pt",
               "ordinary_mlp_seed_20261117.pt", "ordinary_mlp_seed_20261118.pt",
           ]
           missing = [name for name in required if not (out / name).is_file() or (out / name).stat().st_size == 0]
@@ -94,8 +96,10 @@ jobs:
               assert runtime["reptile_inner_gradient_updates"] == 8000
               assert runtime["ordinary_gradient_updates"] == 8000
               assert runtime["gradient_update_budget_matched"] is True
-              assert runtime["same_initialization_verified_by_seeded_constructor"] is True
+              assert runtime["same_initialization_verified_by_state_hash"] is True
+              assert runtime["support_matched_task_and_recording_access_match"] is True
               assert runtime["strict_task_and_recording_access_match"] is False
+              assert runtime["support_matched_gradient_updates"] == 8000
           validation = summary["validation_summary"]
           aggregate = {
               "by_shots": validation["by_shots"],
