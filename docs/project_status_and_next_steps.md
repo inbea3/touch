@@ -83,8 +83,8 @@
 
 ## 三、尚未完成的内容
 
-1. Reptile 初版实现已提交；12 项单元测试已由 GitHub Actions 实际执行并通过，pressure-only 真实数据 smoke test 也已通过。
-2. 27 组、三随机种子的敏感性网格已完成；所有配置的 Reptile 1-shot/2-shot MAE 均高于普通 MLP。当前正在追加最优配置的 200-iteration 长程验证，结果仍属探索性。
+1. Reptile 代码、12 项单元测试、pressure-only 真实数据 smoke test，以及 200-iteration × 3 seeds 的选定配置验证均已完成；Reptile 未在当前四个 Meta-validation 物体上显示 MAE 优势。详细结果见 `results/reptile_meta_learning/selected_validation_200x3_20261119.md`。
+2. 27 组、三随机种子的敏感性网格已完成；所有配置的 Reptile 1-shot/2-shot MAE 均高于普通 MLP。选定配置的长程验证没有改变这一总体判断。
 3. 尚未完成输入帧连续性和真实时间跨度敏感性分析。
 4. 当前主预测实验只使用 96/548 传感器，尚未完成 192 或完整 548 规模对照。
 5. 尚未完成 GNN 的结构增量实验。
@@ -188,7 +188,7 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 已获得对所有日常物体的普遍泛化保证。
 
 
-## 阶段九最新进度（2026-11-19：单测与真实数据 smoke test 已通过）
+## 阶段九最新进度（2026-11-19：200 iteration × 3 seeds 验证已完成）
 
 - 已新增 `scripts/run_reptile_meta_learning.py`：PyTorch 64/32 MLP、一阶 Reptile 参数位移、1-shot/2-shot Support/Query Episode、普通 pooled MLP 对照和物体级评估代码。
 - `tests/test_reptile_meta_learning.py` 现包含 12 项测试。GitHub Actions run `44491690876` 成功，12/12 项 Reptile 单元测试通过。
@@ -198,5 +198,9 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - Smoke test 输出只作为执行诊断；4 个 Meta-validation 物体和单次极短训练不足以支持性能推断。此前未核验的 pilot 数值与对象级结果已删除，不得引用。
 - 27 组超参数敏感性网格已在 GitHub Actions run `44493070529` 成功完成。预先规定的选择规则选出 K=10、inner_lr=0.001、outer_step=0.1；1-shot/2-shot 等权 Reptile MAE 为 0.128356，普通 MLP 为 0.124438。27/27 组中 Reptile 的两种 shot MAE 均高于普通 MLP。
 - 聚合结果已保存至 `results/reptile_meta_learning/sensitivity_grid_summary.json` 和 `sensitivity_grid_summary.csv`。逐对象/逐 Episode 指标和模型权重仍未上传。
-- 正在执行选中配置的 200-iteration、三随机种子长程验证，以检查 50-iteration 网格结果是否受训练长度影响；Meta-test 仍不参与。
+- 选定配置的长程验证已完成：GitHub Actions run `44502406385` 成功，源代码提交 `e3fad2171241cb91409268dc014376ce59d7922d`。200 iterations × 3 seeds；每种方法每个 seed 8,000 次梯度更新；初始化哈希一致；Support-matched MLP 回放相同任务顺序和 Support Recording ID；Meta-test 未使用。
+- Artifact `reptile-selected-validation-44502406385-1` 已成功上传，SHA-256 `68602f212260b93ef7b4d1fcc2026aaee010455c3d8484de813a2ca765a72f36`，保留至 2026-12-19。包含配置、summary、provenance、Episode/物体指标、任务采样、三条训练 trace、scaler、九个 checkpoint 和数据审计输出；未包含原始压力帧。
+- 四个 Meta-validation 物体上，Reptile Support-adapted MAE：1-shot 0.12587、2-shot 0.12454；Support-matched MLP：1-shot 0.12332、2-shot 0.12273；普通 pooled MLP：1-shot 0.12443、2-shot 0.12356。Reptile 未显示 MAE 优势；其平均 Spearman 略高，但 MAE/RMSE 较差。对象级 bootstrap 的独立单位 n=4，结果仅作探索性描述，不能作为确认性显著性结论。
+- 训练公平性：三种方法每个 seed 均为 8,000 次梯度更新、同一模型架构和同一 seed 初始化哈希。Support-matched MLP 精确复用 Reptile 的任务与 Support Recording 调度；ordinary pooled MLP 的 Recording 访问策略不同，因此仅作为辅助基准。
+- 详细数值、区间、配置、限制和复现文件清单见 `results/reptile_meta_learning/selected_validation_200x3_20261119.md`。
 - 研究范围继续保持 pressure-only；沿用固定 18/4/4 划分。Meta-validation/Meta-test 均属于探索性评估，不能称为独立确认性测试。原始数据、逐对象/逐 Episode 文件、scaler 和模型权重不上传到公开仓库或 Actions artifacts。
