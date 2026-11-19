@@ -137,4 +137,4 @@ D_i = MAE(i, ordinary fine-tuning) - MAE(i, Reptile fine-tuning)
 
 当前配置下，Reptile 零样本和适应后误差均高于普通 MLP。该结果不支持宣称 Reptile 有效，但单一配置、50 个外循环迭代和 4 个验证物体不足以否定 Reptile 的所有可能设置。本轮没有进行超参数搜索，也没有运行 Meta-test。
 
-完整结果、任务采样、训练曲线、逐 Episode/物体指标、scaler 和 checkpoint 保存在 `results/reptile_meta_learning/`。下一步先分析参数位移和适应行为，再做有限的验证集超参数敏感性分析；不自动升级为 MAML。
+GitHub 的 `results/reptile_meta_learning/` 保存 pilot summary、配置、provenance 和物体级指标；完整 Episode/任务采样/训练曲线/scaler/checkpoint 已打包为独立运行产物。下一步先分析参数位移和适应行为，再做有限的验证集超参数敏感性分析；不自动升级为 MAML。
