@@ -252,6 +252,44 @@ def train_pooled_mlp(data: dict, train_tasks: dict[int, list[int]], n_features: 
     return model, trace, time.time() - start
 
 
+def train_support_matched_mlp(data: dict, task_log: list[dict], n_features: int,
+                              seed: int, inner_steps: int, inner_lr: float,
+                              batch_size: int, weight_decay: float, device: torch.device):
+    """Single shared MLP trained sequentially on exactly Reptile's task Support schedule.
+
+    It receives the same task order, Support Recording IDs, per-task inner-step
+    count and per-step batch construction, but it has no task-specific clones
+    and no Reptile outer update. Adam state is reset at each task episode.
+    """
+    set_seed(seed)
+    rng = np.random.default_rng(seed + 404)
+    model = EdgeMLP(n_features).to(device)
+    init_hash = model_state_sha256(model)
+    trace = []
+    start = time.time()
+    for episode_index, task in enumerate(task_log, start=1):
+        oid = int(task["object_id"])
+        support_ids = list(map(int, task["support_recording_ids"].split(";")))
+        support = tensors_for(data, support_ids, device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=inner_lr, weight_decay=weight_decay)
+        for inner_step in range(1, inner_steps + 1):
+            optimizer.zero_grad(set_to_none=True)
+            loss = support_batch_loss(model, support, batch_size, rng)
+            loss.backward()
+            optimizer.step()
+            trace.append({
+                "seed": seed,
+                "gradient_step": len(trace) + 1,
+                "episode_index": episode_index,
+                "object_id": oid,
+                "support_recording_ids": ";".join(map(str, support_ids)),
+                "inner_step": inner_step,
+                "initialization_sha256": init_hash,
+                "minibatch_mse": float(loss.detach().cpu()),
+            })
+    return model, trace, time.time() - start
+
+
 def adapt_model(model: torch.nn.Module, support_tensors, steps: int, lr: float,
                 weight_decay: float) -> torch.nn.Module:
     adapted = copy.deepcopy(model)
@@ -288,7 +326,7 @@ def enumerate_object_episodes(tasks: dict[int, list[int]], rng: np.random.Genera
 
 
 def evaluate_split(data: dict, tasks: dict[int, list[int]], ordinary_model,
-                   reptile_model, train_mean: float, seed: int, adapt_steps: int,
+                   support_matched_model, reptile_model, train_mean: float, seed: int, adapt_steps: int,
                    inner_lr: float, weight_decay: float, device: torch.device,
                    split_label: str) -> list[dict]:
     rng = np.random.default_rng(seed + 303)
@@ -300,6 +338,7 @@ def evaluate_split(data: dict, tasks: dict[int, list[int]], ordinary_model,
         lookup = {rid: (rid, x, y) for rid, x, y in cache[oid]}
         support = [lookup[r] for r in ep["support_recording_ids"]]
         ordinary_adapted = adapt_model(ordinary_model, support, adapt_steps, inner_lr, weight_decay)
+        support_matched_adapted = adapt_model(support_matched_model, support, adapt_steps, inner_lr, weight_decay)
         reptile_adapted = adapt_model(reptile_model, support, adapt_steps, inner_lr, weight_decay)
         for rid in ep["query_recording_ids"]:
             _rid, x, y = lookup[rid]
@@ -308,6 +347,8 @@ def evaluate_split(data: dict, tasks: dict[int, list[int]], ordinary_model,
                 "constant_train_zero_shot": np.full_like(y_np, train_mean),
                 "ordinary_mlp_zero_shot": ordinary_model(x).detach().cpu().numpy(),
                 "ordinary_mlp_support_adapted": ordinary_adapted(x).detach().cpu().numpy(),
+                "support_matched_mlp_zero_shot": support_matched_model(x).detach().cpu().numpy(),
+                "support_matched_mlp_support_adapted": support_matched_adapted(x).detach().cpu().numpy(),
                 "reptile_zero_shot": reptile_model(x).detach().cpu().numpy(),
                 "reptile_support_adapted": reptile_adapted(x).detach().cpu().numpy(),
             }
@@ -378,19 +419,26 @@ def summarize(object_rows: list[dict], seed: int, n_boot: int) -> dict:
                 vals = [r[metric] for r in object_rows if r["shots"] == shots and r["model"] == model]
                 result[str(shots)][model][metric] = bootstrap_mean(vals, seed + shots*100 + sum(map(ord, model+metric)), n_boot)
     paired = []
+    comparisons = [
+        ("ordinary_mlp_support_adapted", "ordinary_finetune_minus_reptile_finetune"),
+        ("support_matched_mlp_support_adapted", "support_matched_finetune_minus_reptile_finetune"),
+    ]
     for shots in (1, 2):
         lookup = {(r["object_id"], r["model"]): r["mae"] for r in object_rows if r["shots"] == shots}
-        diffs = []
-        for oid in sorted({r["object_id"] for r in object_rows if r["shots"] == shots}):
-            a = lookup.get((oid, "ordinary_mlp_support_adapted"))
-            b = lookup.get((oid, "reptile_support_adapted"))
-            if a is not None and b is not None:
-                diffs.append({"object_id": oid, "ordinary_minus_reptile_mae": float(a-b)})
-        vals = [d["ordinary_minus_reptile_mae"] for d in diffs]
-        paired.append({"shots": shots, "comparison": "ordinary_finetune_minus_reptile_finetune",
-            "positive_favors_reptile": True, "objects_improved": int(np.sum(np.asarray(vals) > 0)),
-            "object_differences": diffs,
-            "bootstrap": bootstrap_mean(vals, seed + shots*991, n_boot)})
+        object_ids = sorted({r["object_id"] for r in object_rows if r["shots"] == shots})
+        for baseline_model, comparison_name in comparisons:
+            diffs = []
+            for oid in object_ids:
+                a = lookup.get((oid, baseline_model))
+                b = lookup.get((oid, "reptile_support_adapted"))
+                if a is not None and b is not None:
+                    diffs.append({"object_id": oid, "baseline_minus_reptile_mae": float(a-b)})
+            vals = [d["baseline_minus_reptile_mae"] for d in diffs]
+            paired.append({"shots": shots, "baseline_model": baseline_model,
+                "comparison": comparison_name, "positive_favors_reptile": True,
+                "objects_improved": int(np.sum(np.asarray(vals) > 0)),
+                "object_differences": diffs,
+                "bootstrap": bootstrap_mean(vals, seed + shots*991 + sum(map(ord, baseline_model)), n_boot)})
     return {"by_shots": result, "paired_mae": paired}
 
 
