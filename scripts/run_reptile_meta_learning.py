@@ -138,7 +138,10 @@ def full_support_loss(model: torch.nn.Module, support_tensors) -> torch.Tensor:
 
 def apply_reptile_update(model: torch.nn.Module, task_states: list[dict[str, torch.Tensor]],
                          outer_step: float) -> float:
-    """Apply theta <- theta + eps * mean_i(phi_i - theta), task weighted equally."""
+    """Apply theta <- theta + eps * mean_i(phi_i - theta), task weighted equally.
+
+    Returns the norm of the meta-batch mean parameter displacement.
+    """
     if not task_states:
         raise ValueError("At least one task state is required")
     if not (0.0 < float(outer_step) <= 1.0):
@@ -200,7 +203,7 @@ def train_reptile(data: dict, train_tasks: dict[int, list[int]], n_features: int
         trace.append({"seed": seed, "iteration": iteration,
             "mean_support_minibatch_mse": float(np.mean(losses)),
             "task_loss_sd": float(np.std(losses, ddof=1)) if len(losses) > 1 else 0.0,
-            "mean_task_parameter_delta_norm": delta_norm,
+            "norm_of_mean_task_displacement": delta_norm,
             "meta_batch_size": meta_batch_size, "inner_steps": inner_steps,
             "gradient_updates_this_iteration": meta_batch_size * inner_steps})
     return model, task_log, trace, time.time() - start
