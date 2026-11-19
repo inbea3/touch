@@ -49,13 +49,29 @@ class ReptileSensitivityGridTests(unittest.TestCase):
                     str(k): {
                         "reptile_support_adapted": {"mae": {"mean": .1, "ci95_low": .08, "ci95_high": .12}},
                         "ordinary_mlp_support_adapted": {"mae": {"mean": .11, "ci95_low": .09, "ci95_high": .13}},
+                        "support_matched_mlp_support_adapted": {"mae": {"mean": .105, "ci95_low": .085, "ci95_high": .125}},
                     } for k in (1, 2)
                 }
+            },
+            "validation_summary": {
+                "by_shots": {
+                    str(k): {
+                        "reptile_support_adapted": {"mae": {"mean": .1, "ci95_low": .08, "ci95_high": .12}},
+                        "ordinary_mlp_support_adapted": {"mae": {"mean": .11, "ci95_low": .09, "ci95_high": .13}},
+                        "support_matched_mlp_support_adapted": {"mae": {"mean": .105, "ci95_low": .085, "ci95_high": .125}},
+                    } for k in (1, 2)
+                },
+                "paired_mae": [
+                    {"shots": k, "baseline_model": "support_matched_mlp_support_adapted",
+                     "bootstrap": {"mean": .005, "ci95_low": .001, "ci95_high": .009},
+                     "objects_improved": 3} for k in (1, 2)
+                ]
             },
             "runtime_by_seed": {
                 str(seed): {
                     "gradient_update_budget_matched": True,
                     "strict_task_and_recording_access_match": False,
+                    "support_matched_task_and_recording_access_match": True,
                 } for seed in (1, 2, 3)
             }
         }
