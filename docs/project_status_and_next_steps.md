@@ -312,3 +312,14 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - **决策：** 当前 Weight 六次 grasp 不支持可复现的跨抓取物体级关系目标。等 grasp Fisher 聚合没有改善 split-half 排序/边重合；不把 Weight 加入 Reptile/ANIL 主训练，不宣称其增加独立 object task。保留为重复抓取变异性和目标可行性结果。
 - 报告：`docs/weight_object_level_aggregation_results_20261122.md`；机器摘要：`results/data_expansion/weight_object_level_aggregation_20261122.json`；复现脚本：`scripts/analyze_weight_object_aggregation.py`。本地运行包 `weight_object_aggregation_20261122_run02.zip` 包含配置、数据哈希、传感器选择、相关矩阵派生文件、逐划分/物体/LOO 结果、bootstrap、日志和 SHA-256 manifest，不含原始压力帧。
 - 当前研究方向不变：以原 classification pressure-only 数据上的跨物体预测为主线；Weight 暂作负向可行性/重复抓取变异性分析。任何未来新目标均需单独定义 estimand 和独立物体级评估，不能与原任务混报。
+
+
+## 阶段十七：外部 pressure-only 数据集接入审计准备（2026-11-22）
+
+- 阶段十六确认 STAG Weight 六次 grasp 的简单物体级 Fisher 聚合不能提供可靠的跨抓取关系排序；不继续围绕同一批 Weight 标签调参。
+- 下一步转向独立外部对象数据，先审计 TUM-ICS Hide-and-Seek（HAS），不立即训练模型。公开数据卡标注约 1,120,116 帧、约 4.3k trajectories、33 个物理物体、61 个 object-weight 类别、CC BY 4.0；官方 schema 中有 44 维 `obs_skin_force_left`。官方仓库说明 temporal windows 按 `episode_index` 分组且不跨 episode；标签映射把 61 个 object-weight labels 映射为 34 个 object labels（含 negative）和 4 个 weight labels。
+- 已冻结 `docs/has_pressure_only_external_data_audit_protocol_20261122.md`。允许读取的字段仅限 `obs_skin_force_left`、`timestamp`、`episode_index`、`classification_label` 与官方 label mapping；禁止使用 point-cloud、pose、proximity、distance、DAMI、wrist F/T 等字段。该数据不含本研究需要使用的视频模态；本阶段不接入任何视觉信息。
+- HAS 为机器人触觉皮肤，与 STAG 人手压力阵列硬件不同。只作为独立外部域研究；44 通道不可与 STAG 的 96/548 通道拼接，独立建立通道处理、标准化和目标矩阵。
+- 首轮只做 dataset revision/license/file manifest、episode label consistency、物理对象与 weight variant 映射、官方 split 是否 object-disjoint、episode 时长/时间戳、44 通道质量和重复 episode 数量审计。只有足够物理对象具有多个完整 episode、且仅用允许字段可定义早期/未来窗口后，才另立 HAS-specific target protocol。
+- 对象级划分必须把同一物理对象的所有 weight variants 放在同一 outer fold；不能把 61 个 object-weight labels 当成 61 个独立物体。若对象级样本量不足或 episode 标签/目标定义不清，停止模型训练。
+- 该数据候选来自官方数据卡与官方代码仓库：Hugging Face `TUM-ICS/Hide-and-Seek`；GitHub `tactile-hide-and-seek/Tactile-Hide-and-Seek`。许可为 CC BY 4.0，使用时需按要求署名。外部结果与 STAG 结果分开报告，不混合原始通道或宣称同硬件验证。
