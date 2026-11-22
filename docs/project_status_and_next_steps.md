@@ -297,3 +297,18 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 决策：Ledoit–Wolf/OAS 改善数值正则化，但没有解决跨 grasp 的边排序与高阈值正边一致性问题。Weight 的六个 grasp interval 仍不得作为可交换 Recording 加入 Reptile/ANIL 主训练集；保留为重复抓取变异性/标签可行性分析，不宣称增加独立 object task 数。
 - 完整运行摘要：`results/data_expansion/weight_variance_shrinkage_audit_20261122.md`；机器摘要：`results/data_expansion/weight_variance_shrinkage_audit_20261122.json`。本地运行包包含 config、environment、input manifest、sensor selection、逐 grasp 方差、逐 partition 指标、物体级汇总、bootstrap、paired estimator differences、run.log 和 manifest SHA-256；不包含原始压力帧。
 - 后续：暂不重训 Reptile/ANIL，不进行同一验证集上的额外搜索。若未来构造跨 grasp pooled object-level target，必须另立协议并明确其 estimand 与当前 within-recording future-correlation target 不同。
+
+
+## 阶段十六：Weight 跨抓取物体级关系聚合可行性（2026-11-22）
+
+- 已冻结新 estimand 的分析协议：`docs/weight_object_level_aggregation_protocol_20261122.md`。研究问题是六次重复 grasp 是否能聚合成可复现的物体级传感器关系目标；该目标与原来的 within-recording future-correlation target 不同。
+- 使用阶段十五相同的实际 `weights_lite` 输入，SHA-256：`37b1c5fcb246383cdaed552ce07e35690883545cdfdbfc118b48c1cbd2ee3cf3`。仍只使用 pressure-only 数据，不访问图像、视频、姿态等其他模态；不训练模型。
+- 固定 96/548 传感器子集（seed=20261116）、压力变换 `clip((pressure-500)/150,0,1)`、每次 grasp 前 5 个有效帧剔除、未来窗口剩余帧；每物体六个完整 grasp，26 个物体，156 个 grasp intervals。
+- 比较四种聚合：等 grasp Fisher-z 均值、等 grasp Fisher-z 中位数、按 future frame 数加权 Fisher-z 均值、合并 future frames 后 Pearson。每物体穷举 10 个唯一 3-vs-3 划分；未来窗口和 all-valid non-future 敏感性两套协议，共 2,080 条 partition 记录。另完成 156 条 leave-one-grasp-out 影响诊断；统计推断先在物体内汇总，再以 26 个物体为单位做 5,000 次 bootstrap（seed=20261122）。
+- 未来窗口 edge Spearman：等权 Fisher 均值 0.00688（95% CI [0.00322, 0.01076]）；Fisher 中位数 0.00394 [-0.00033, 0.00800]；帧数加权 Fisher 均值 0.00696 [0.00332, 0.01071]；合并帧 Pearson 0.05043 [0.03603, 0.06646]。
+- r≥0.7 正边 Jaccard：三种 Fisher 聚合分别为 0.00254、0.00257、0.00404；合并帧 Pearson 为 0.04059。Fisher 聚合虽然平均绝对边差异较低，但边排序和正边重合更差；较低绝对差异不能解释为更可靠的结构。
+- Leave-one-grasp-out 与 all-six 聚合的 Spearman 均值 0.90581，但每个估计共享 5/6 个 grasp，这是重叠样本影响诊断，不是独立验证。不能将其作为目标稳定性证据。
+- 六次 grasp 的 edge Fisher-z 离散程度也保留在 `heterogeneity_by_object.csv`；其跨物体中位数统计显示 grasp-level 关系存在明显变异。
+- **决策：** 当前 Weight 六次 grasp 不支持可复现的跨抓取物体级关系目标。等 grasp Fisher 聚合没有改善 split-half 排序/边重合；不把 Weight 加入 Reptile/ANIL 主训练，不宣称其增加独立 object task。保留为重复抓取变异性和目标可行性结果。
+- 报告：`docs/weight_object_level_aggregation_results_20261122.md`；机器摘要：`results/data_expansion/weight_object_level_aggregation_20261122.json`；复现脚本：`scripts/analyze_weight_object_aggregation.py`。本地运行包 `weight_object_aggregation_20261122_run02.zip` 包含配置、数据哈希、传感器选择、相关矩阵派生文件、逐划分/物体/LOO 结果、bootstrap、日志和 SHA-256 manifest，不含原始压力帧。
+- 当前研究方向不变：以原 classification pressure-only 数据上的跨物体预测为主线；Weight 暂作负向可行性/重复抓取变异性分析。任何未来新目标均需单独定义 estimand 和独立物体级评估，不能与原任务混报。
