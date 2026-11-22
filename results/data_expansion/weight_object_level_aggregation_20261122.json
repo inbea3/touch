@@ -1,0 +1,63 @@
+{
+  "stage": 16,
+  "date": "2026-11-22",
+  "input_sha256": "37b1c5fcb246383cdaed552ce07e35690883545cdfdbfc118b48c1cbd2ee3cf3",
+  "outer_unit": "physical object",
+  "n_objects": 26,
+  "grasp_intervals": 156,
+  "partitions": 2080,
+  "loo_rows": 156,
+  "bootstrap_reps": 5000,
+  "bootstrap_seed": 20261122,
+  "primary_future_window": {
+    "equal_grasp_fisher_mean": {
+      "spearman_mean": 0.006878815670202209,
+      "spearman_ci95": [
+        0.003222488343846912,
+        0.01075561957355738
+      ],
+      "mad_mean": 0.2559914663337726,
+      "jaccard_r_ge_0_7": 0.002540585700279155
+    },
+    "equal_grasp_fisher_median": {
+      "spearman_mean": 0.00393957270525384,
+      "spearman_ci95": [
+        -0.00033331370034379523,
+        0.008003584825886591
+      ],
+      "mad_mean": 0.2862049538279471,
+      "jaccard_r_ge_0_7": 0.002569123969217
+    },
+    "frame_weighted_fisher_mean": {
+      "spearman_mean": 0.006964989440022157,
+      "spearman_ci95": [
+        0.003315348344673588,
+        0.010709416657157588
+      ],
+      "mad_mean": 0.25553842941667926,
+      "jaccard_r_ge_0_7": 0.004036407550937344
+    },
+    "pooled_frame_pearson": {
+      "spearman_mean": 0.05043273531462727,
+      "spearman_ci95": [
+        0.03603073560192207,
+        0.06645589566911399
+      ],
+      "mad_mean": 0.339427422082591,
+      "jaccard_r_ge_0_7": 0.0405936424520235
+    }
+  },
+  "leave_one_grasp_out": {
+    "spearman_mean": 0.905812142386416,
+    "ci95": [
+      0.9051080721911384,
+      0.9065600935386622
+    ],
+    "interpretation": "overlapping influence diagnostic, not independent validation"
+  },
+  "decision": "Do not use Weight as exchangeable Reptile/ANIL recordings; retain as repeated-grasp variability and target-feasibility evidence.",
+  "model_training": false,
+  "modalities": [
+    "pressure only"
+  ]
+}
