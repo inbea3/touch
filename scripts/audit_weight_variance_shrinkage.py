@@ -255,6 +255,43 @@ def main():
                 row[col + "_p95"] = float(values.quantile(.95))
         diag_rows.append(row)
     pd.DataFrame(diag_rows).to_csv(args.output_dir / "estimator_diagnostics.csv", index=False)
+    # Object-level variance/coverage bootstrap (separate RNG stream).
+    variance_summary = {}
+    variance_rng = np.random.default_rng(args.bootstrap_seed)
+    for metric in ("valid_frames", "future_frames", "future_sensor_nonzero_variance_fraction",
+                   "future_sensor_variance_gt_1e-6_fraction", "future_effective_sensor_count",
+                   "future_contact_fraction_gt_0.01", "future_contact_fraction_gt_0.02",
+                   "future_contact_fraction_gt_0.05"):
+        values = variance_df.groupby("object_id")[metric].median().to_numpy(dtype=float)
+        boot = np.asarray([variance_rng.choice(values, size=len(values), replace=True).mean()
+                           for _ in range(args.bootstrap_reps)])
+        variance_summary[metric] = {
+            "n_objects": int(len(values)), "mean_of_object_medians": float(values.mean()),
+            "median_of_object_medians": float(np.median(values)),
+            "object_median_iqr": [float(np.quantile(values, .25)), float(np.quantile(values, .75))],
+            "object_bootstrap_ci95": [float(np.quantile(boot, .025)), float(np.quantile(boot, .975))]
+        }
+    (args.output_dir / "variance_bootstrap_summary.json").write_text(
+        json.dumps(variance_summary, indent=2), encoding="utf-8")
+
+    # Paired object-level estimator differences versus sample Pearson.
+    paired = {}
+    primary = object_df[object_df.window_protocol == "future_after_5"]
+    base = primary[primary.estimator == "pearson"].set_index("object_id")
+    for estimator in ("ledoit_wolf", "oas"):
+        current = primary[primary.estimator == estimator].set_index("object_id")
+        paired[estimator] = {}
+        for metric in ("spearman_mean", "mean_abs_diff_mean",
+                       "jaccard_r_ge_0.5_mean", "jaccard_r_ge_0.7_mean"):
+            diff = (current[metric] - base[metric]).replace([np.inf, -np.inf], np.nan).dropna().to_numpy()
+            boot = np.asarray([rng.choice(diff, size=len(diff), replace=True).mean()
+                               for _ in range(args.bootstrap_reps)])
+            paired[estimator][metric] = {
+                "n_objects": int(len(diff)), "mean_difference": float(diff.mean()),
+                "ci95": [float(np.quantile(boot, .025)), float(np.quantile(boot, .975))]
+            }
+    (args.output_dir / "paired_estimator_differences.json").write_text(
+        json.dumps(paired, indent=2), encoding="utf-8")
     config = {"metadata": str(args.metadata), "metadata_sha256": sha256_file(args.metadata),
               "sensor_seed": args.sensor_seed, "nodes": args.nodes, "pressure_transform": "clip((raw-500)/150,0,1)",
               "grasp_indices": list(range(6)), "early_input_valid_frames": 5,
