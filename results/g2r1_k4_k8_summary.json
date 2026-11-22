@@ -1,0 +1,181 @@
+{
+  "stage": "G2-R1 full-548-node k4/k8 sensitivity",
+  "status": "completed_3_seeds_x_5_fold_object_grouped_cv",
+  "date": "2026-11-22",
+  "split_seeds": [
+    20261119,
+    20261120,
+    20261121
+  ],
+  "outer_folds": 15,
+  "objects": 26,
+  "recordings": 78,
+  "active_sensors": 548,
+  "unordered_pairs_per_recording": 149878,
+  "input_metadata_sha256": "19062ed3415df6e21ae055c5149315a5350652a27d59ab55fed74e395f2f1378",
+  "protocol": {
+    "input": "earliest five hasValidLabel=True pressure frames",
+    "target": "Pearson correlation across all subsequent hasValidLabel=True pressure frames",
+    "normalization": "clip((pressure-500)/150,0,1)",
+    "node_features": "8 early-window pressure statistics plus normalized x/y coordinates (10 dimensions)",
+    "models": [
+      "Node-MLP",
+      "Spatial-GNN k4",
+      "Spatial-GNN k8"
+    ],
+    "graph": "tie-inclusive Euclidean kNN; union symmetrization; self-loops; symmetric degree normalization",
+    "epochs": 5,
+    "training_pairs_per_recording_per_epoch": 4096,
+    "eval_chunk": 32768,
+    "optimizer": "AdamW(lr=0.0005, weight_decay=0.001)",
+    "scaler": "StandardScaler fitted only on training recordings within each fold",
+    "outer_cv": "5-fold object-grouped CV repeated with seeds 20261119, 20261120, 20261121",
+    "object_aggregation": "average recordings within object, then equal-weight 26 objects"
+  },
+  "graph_topology": {
+    "k4": {
+      "undirected_edges": 1395,
+      "components": 1,
+      "degree_min": 4,
+      "degree_median": 5,
+      "degree_max": 8
+    },
+    "k8": {
+      "undirected_edges": 2329,
+      "components": 1,
+      "degree_min": 8,
+      "degree_median": 8,
+      "degree_max": 14
+    }
+  },
+  "per_seed_metrics": {
+    "20261119": {
+      "Node-MLP": {
+        "mae": 0.1230378773732063,
+        "rmse": 0.15998627990484238,
+        "spearman": 0.3239951479517629
+      },
+      "Spatial-GNN k4": {
+        "mae": 0.12296995921776843,
+        "rmse": 0.1598511550288934,
+        "spearman": 0.3206752621854419
+      },
+      "Spatial-GNN k8": {
+        "mae": 0.12285698854770416,
+        "rmse": 0.15976460631459188,
+        "spearman": 0.32030799047819614
+      }
+    },
+    "20261120": {
+      "Node-MLP": {
+        "mae": 0.12243759460174121,
+        "rmse": 0.1594029135811023,
+        "spearman": 0.32482703297618437
+      },
+      "Spatial-GNN k4": {
+        "mae": 0.1226809904552423,
+        "rmse": 0.1595180117740081,
+        "spearman": 0.32459325776578607
+      },
+      "Spatial-GNN k8": {
+        "mae": 0.12225640249940067,
+        "rmse": 0.1591669341119436,
+        "spearman": 0.3253636224629473
+      }
+    },
+    "20261121": {
+      "Node-MLP": {
+        "mae": 0.12201320599669066,
+        "rmse": 0.15920991383683988,
+        "spearman": 0.325934202823716
+      },
+      "Spatial-GNN k4": {
+        "mae": 0.12151286731927824,
+        "rmse": 0.15856049601466227,
+        "spearman": 0.3270218354571852
+      },
+      "Spatial-GNN k8": {
+        "mae": 0.12156737280579716,
+        "rmse": 0.15853865234515607,
+        "spearman": 0.32587019516848476
+      }
+    }
+  },
+  "mean_across_split_seeds": {
+    "Node-MLP": {
+      "mae": 0.12249622599054606,
+      "rmse": 0.1595330357742615,
+      "spearman": 0.3249187945838878
+    },
+    "Spatial-GNN k4": {
+      "mae": 0.12238793899742965,
+      "rmse": 0.1593098876058546,
+      "spearman": 0.32409678513613777
+    },
+    "Spatial-GNN k8": {
+      "mae": 0.12222692128430067,
+      "rmse": 0.15915673092389718,
+      "spearman": 0.3238472693698761
+    }
+  },
+  "paired_mae_difference_vs_node_mlp": {
+    "Spatial-GNN k4": {
+      "mean_difference": -0.00010828699311639575,
+      "bootstrap_95_ci": [
+        -0.0002591141595099216,
+        0.00005333614097828531
+      ],
+      "objects_model_better": 16,
+      "n_objects": 26,
+      "per_seed_mean_difference": {
+        "20261119": -0.00006791815543786251,
+        "20261120": 0.0002433958535011014,
+        "20261121": -0.0005003386774124261
+      }
+    },
+    "Spatial-GNN k8": {
+      "mean_difference": -0.0002693047062454066,
+      "bootstrap_95_ci": [
+        -0.0004468544442047438,
+        -0.00007053858751797202
+      ],
+      "objects_model_better": 21,
+      "n_objects": 26,
+      "per_seed_mean_difference": {
+        "20261119": -0.0001808888255021525,
+        "20261120": -0.00018119210234055045,
+        "20261121": -0.000445833190893517
+      }
+    }
+  },
+  "training_curve_mean_mse": {
+    "Node-MLP": [
+      0.03281197818001073,
+      0.029332734937952076,
+      0.02799179902724015,
+      0.0272604882685103,
+      0.026611714644810904
+    ],
+    "Spatial-GNN k4": [
+      0.032692174866115524,
+      0.02909809551610754,
+      0.02783892765483528,
+      0.027121439521994303,
+      0.026507121630791552
+    ],
+    "Spatial-GNN k8": [
+      0.03266378228212633,
+      0.029056927690863925,
+      0.027799924855766,
+      0.02708157916395634,
+      0.026470803389444002
+    ]
+  },
+  "limitations": [
+    "The three split repeats reuse the same 26 objects; bootstrap intervals are descriptive, not independent external replication.",
+    "Training is fixed at five epochs to match G2; epoch-five training loss continues to decrease, so convergence is not established.",
+    "The 548-sensor mask is frozen from G0 using unsupervised full-archive temporal variance.",
+    "G2 k=6 remains a historical reference, not a k=6 condition rerun in the same G2-R1 process."
+  ],
+  "result_package_sha256": "0b949a66602a8c17696658e35b730c586a03efdc4cfa66701664b18db0482ec2"
+}
