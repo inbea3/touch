@@ -517,3 +517,57 @@ G2-R2加强了空间图对MAE有小幅增量贡献的证据：k4/k6/k8均优于N
 4. GNN×Reptile/ANIL仍需等待上述结构增量和稳定性证据；不提前扩大元学习搜索。
 
 **当前暂停点：** G2-R2已完成；空间GNN在MAE上有小幅增益信号，但排序指标未改善，50轮仍不足以证明收敛。下一步优先做更长训练预算与初始化稳健性，而不是直接进入大规模GNN×元学习组合。
+
+
+---
+
+# 最新进度（2026-11-22）：G2-R3 初始化稳健性与随机拓扑对照（正式运行中）
+
+## 1. 本轮目标
+
+在G2-R2之后，检验两件事：
+- 真实Spatial-GNN k6相对Node-MLP的MAE增量是否对参数初始化稳健；
+- 真实物理k6图是否优于保持度数序列与连通性的随机重连图。
+
+研究范围仍为STAG pressure-only，完整548节点，不使用视频、图像或视觉标签。
+
+## 2. 冻结实验设计
+
+- 外层：3个固定split seeds（20261119、20261120、20261121）× 5折物体分组CV，共15个fold。
+- 初始化：3个模型初始化种子（20261123、20261124、20261125）。
+- 图条件：Node-MLP、真实Spatial-GNN k6、3个独立degree-preserving connected rewired k6图。
+- 随机重连种子：2026112201、2026112202、2026112203；必须核验精确度数序列、边数、连通性，并保存图矩阵、SHA-256、交换次数及与真实图的边Jaccard。
+- 每个(split, fold, init)内所有条件共享初始参数、训练Recording调度、pair抽样索引、StandardScaler与共同epoch。
+- 每个初始化的共同epoch仅由该fold的Node-MLP内部验证物体等权MAE选择；外层测试集不参与选择。
+- 训练上限100 epochs，patience=15，min_delta=1e-5；AdamW lr=0.0005，weight decay=0.001。
+- 内部验证每条Recording最多固定抽样8,192个pair；外层测试评估全部有限pair。
+
+## 3. 预运行
+
+- 已完成1个外层fold × 1个初始化 × 5个图条件的真实数据smoke test。
+- 5种条件均完成训练、全量测试预测、checkpoint和逐epoch trace写入。
+- Smoke test只验证执行链路，不作为科学结果，也不并入正式分析。
+
+## 4. 可追溯性与复原
+
+G2-R3代码已将训练痕迹作为强制产物：
+- `run_manifest.json`：完整参数、依赖版本、数据/源代码哈希、UTC时间。
+- 完整stdout/stderr日志。
+- 每个fold的外层/内层物体与Recording清单。
+- 每个初始化的逐epoch训练MSE、验证MAE、最佳epoch和early-stop轨迹。
+- 每个模型条件的逐epochrefit训练MSE。
+- 每个fold/初始化的初始参数权重和哈希。
+- 最终模型权重、StandardScaler参数、optimizer state、torch RNG state和邻接矩阵哈希。
+- Recording级和物体级测试指标、图邻接矩阵与拓扑审计。
+- 原子写入的进度checkpoint；已完成模型条件可跳过，未完成条件可续跑。
+
+上一轮G2-R2归档包含逐fold结果与模型权重，但完整控制台运行日志未进入ZIP。本轮将把原始日志一并纳入最终归档，避免只留下汇总结果。
+
+## 5. 当前状态
+
+- Smoke test：通过。
+- 正式实验：已启动。
+- 正式模型条件总数：3 split seeds × 5 folds × 3 initialization seeds × 5 graph conditions = 225个匹配模型运行。
+- 暂无正式G2-R3测试结果；smoke test结果不用于结论。
+
+详细冻结协议见 `docs/g2r3_protocol.md`；复原说明见仓库根目录 `README_G2R3.md`。
