@@ -280,3 +280,20 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 解释：重复抓取确实增加了同一物体内的 episode 数，但当前未来传感器相关矩阵在抓取组之间表现出很低的一致性。原因可能包括短窗口估计噪声、抓取间接触状态变化或真实关系变化；本审计不能区分这些原因。
 - 决策：暂不将 Weight 的六个 grasp interval 当成可交换 Recording 直接加入 Reptile/ANIL 训练，也不声称其解决独立任务不足。下一步仅做压力通道方差/有效覆盖诊断和收缩协方差估计器敏感性；如果没有可解释且预先规定的聚合目标，则将 Weight 保留为重复抓取变异性分析/负向可行性结果。
 - 报告：`docs/weight_grasp_label_stability_20261119.md`；机器可读结果：`results/data_expansion/weight_grasp_label_stability_20261119.json`。未训练模型、未使用视频或其他模态。
+
+
+## 阶段十五：Weight 压力方差、传感器覆盖与协方差估计器敏感性（2026-11-22）
+
+- 已重新上传并实际读取 `weights_lite`；ZIP 完整性通过。输入 SHA-256：`37b1c5fcb246383cdaed552ce07e35690883545cdfdbfc118b48c1cbd2ee3cf3`。压力矩阵 11,682 × 32 × 32、int16、范围 510–654，无 NaN/Inf；27 recordings（含 empty_hand）、26 个物理物体、2,301 个 graspValid 帧。
+- 仅使用 pressure-only 数据及 object/grasp/timestamp 元数据；未访问视频、图像或其他模态；未训练模型。
+- 复现固定 96/548 传感器子集，seed=20261116；精确坐标、索引及哈希保留在运行产物。
+- 26 × 6 = 156 个完整 object/grasp 区间，每段 11–15 个有效帧；剔除前 5 个早期输入帧后，未来目标仅 6–10 帧。graspIndex=6 不完整尾段排除。
+- 传感器方差审计：未来窗口中非零方差传感器比例中位数 1.00，方差 >1e-6 比例中位数 1.00；有效传感器参与率（participation ratio）中位数 74.49/96，物体级 bootstrap 95% CI [67.84, 74.55]。但各 grasp 的有效传感器数范围 12.23–82.46，仍有显著异质性。
+- 预先规定的 transformed pressure >0.01/0.02/0.05 三个阈值在所选通道未来窗口中均得到 100% 比例，因为该数据变换后的数值全部高于 0.05；这些阈值在 Weight 数据中不具备接触覆盖区分能力，不能作为 contact label。
+- 对每物体 10 个唯一 3-grasp vs 3-grasp 划分，分别比较 sample Pearson、Ledoit–Wolf、OAS；未来窗口与 full-valid-window（非未来敏感性）两种协议，共 1,560 条 partition 记录。每个相关矩阵 4,560 条无向边；无估计器警告或失败。
+- 未来窗口 edge Spearman：Pearson 0.05043（object bootstrap 95% CI [0.03647, 0.06671]）；Ledoit–Wolf 0.05122 [0.03729, 0.06748]；OAS 0.05142 [0.03699, 0.06817]。收缩估计器只带来极小的排序一致性变化。
+- r≥0.7 正边 Jaccard：Pearson 0.04059 [0.02821, 0.05399]；Ledoit–Wolf 0.04051 [0.02600, 0.05603]；OAS 0.04100 [0.02594, 0.05701]。没有实质改善。收缩方法降低平均绝对边差异，但会把相关估计向零收缩，且 r≥0.5 Jaccard 反而下降；不能把较低绝对差异直接解释为真实物理目标更稳定。
+- full-valid-window 敏感性结果仍然很弱：edge Spearman Pearson 0.05592、Ledoit–Wolf 0.05647、OAS 0.05667。
+- 决策：Ledoit–Wolf/OAS 改善数值正则化，但没有解决跨 grasp 的边排序与高阈值正边一致性问题。Weight 的六个 grasp interval 仍不得作为可交换 Recording 加入 Reptile/ANIL 主训练集；保留为重复抓取变异性/标签可行性分析，不宣称增加独立 object task 数。
+- 完整运行摘要：`results/data_expansion/weight_variance_shrinkage_audit_20261122.md`；机器摘要：`results/data_expansion/weight_variance_shrinkage_audit_20261122.json`。本地运行包包含 config、environment、input manifest、sensor selection、逐 grasp 方差、逐 partition 指标、物体级汇总、bootstrap、paired estimator differences、run.log 和 manifest SHA-256；不包含原始压力帧。
+- 后续：暂不重训 Reptile/ANIL，不进行同一验证集上的额外搜索。若未来构造跨 grasp pooled object-level target，必须另立协议并明确其 estimand 与当前 within-recording future-correlation target 不同。
