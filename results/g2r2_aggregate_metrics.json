@@ -1,0 +1,88 @@
+{
+  "status": "completed",
+  "folds": 15,
+  "split_seeds": [
+    20261119,
+    20261120,
+    20261121
+  ],
+  "input_metadata_sha256": "19062ed3415df6e21ae055c5149315a5350652a27d59ab55fed74e395f2f1378",
+  "overall_metrics": {
+    "Node-MLP": {
+      "mae": 0.1205379347770642,
+      "rmse": 0.1575821212405323,
+      "spearman": 0.344821391828427
+    },
+    "Spatial-GNN k4": {
+      "mae": 0.12025514289609386,
+      "rmse": 0.157203983865742,
+      "spearman": 0.3438445857076746
+    },
+    "Spatial-GNN k6": {
+      "mae": 0.1201720409031607,
+      "rmse": 0.15711609914134708,
+      "spearman": 0.344355961141179
+    },
+    "Spatial-GNN k8": {
+      "mae": 0.12020872014327948,
+      "rmse": 0.15717142829910302,
+      "spearman": 0.34366399451632645
+    }
+  },
+  "paired_mae_difference_vs_node_mlp": {
+    "Spatial-GNN k4": {
+      "mean_difference": -0.0002827918809703273,
+      "bootstrap_95_ci": [
+        -0.00043615,
+        -0.00012015
+      ],
+      "objects_better": 20,
+      "n_objects": 26,
+      "relative_improvement_percent": 0.23460820155360465
+    },
+    "Spatial-GNN k6": {
+      "mean_difference": -0.00036589387390348734,
+      "bootstrap_95_ci": [
+        -0.00055655,
+        -0.00015276
+      ],
+      "objects_better": 22,
+      "n_objects": 26,
+      "relative_improvement_percent": 0.303550807121601
+    },
+    "Spatial-GNN k8": {
+      "mean_difference": -0.0003292146337847429,
+      "bootstrap_95_ci": [
+        -0.00052847,
+        -0.00011177
+      ],
+      "objects_better": 21,
+      "n_objects": 26,
+      "relative_improvement_percent": 0.27312118329688306
+    }
+  },
+  "selected_common_epochs": {
+    "mean": 48.2,
+    "median": 49,
+    "min": 45,
+    "max": 50,
+    "at_max_epoch": 5
+  },
+  "protocol": {
+    "max_epochs": 50,
+    "patience": 8,
+    "min_delta": 0.00001,
+    "inner_validation_pair_sample": 8192,
+    "train_schedule": "one recording per object per epoch, deterministic 3-recording rotation",
+    "pairs_per_selected_recording_per_epoch": 12288,
+    "epoch_selection": "Node-MLP inner-validation object-macro MAE selects common epoch",
+    "refit": "each candidate refit on all outer-training objects for common selected epoch",
+    "outer_cv": "5-fold object-grouped CV x 3 seeds"
+  },
+  "limitations": [
+    "Validation curve still improves at epoch 50; convergence is not established.",
+    "Three split repeats reuse the same 26 physical objects.",
+    "Inner validation MAE uses 8192 sampled pairs per recording; outer test uses all pairs.",
+    "Common epoch selected using Node-MLP validation curve may not be optimal for each graph architecture."
+  ]
+}
