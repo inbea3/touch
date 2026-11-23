@@ -167,7 +167,15 @@ def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir
   for oid,rs in obj.items():
    obj_rows.append({"object_id":oid,**{k:float(np.mean([r[k] for r in rs])) for k in ("mae","rmse","spearman")}})
   return rec_rows,obj_rows
- run_dir=outdir/f"split{split_seed}_fold{fold_i+1}_{condition}_init{seed}";run_dir.mkdir(parents=True,exist_ok=False)
+ base_name=f"split{split_seed}_fold{fold_i+1}_{condition}_init{seed}"
+ run_dir=outdir/base_name
+ if run_dir.exists() and (run_dir/"summary.json").exists():
+  return json.loads((run_dir/"summary.json").read_text())
+ if run_dir.exists():
+  attempt=2
+  while (outdir/f"{base_name}_attempt{attempt}").exists(): attempt+=1
+  run_dir=outdir/f"{base_name}_attempt{attempt}"
+ run_dir.mkdir(parents=True,exist_ok=False)
  best=float("inf");best_epoch=0;wait=0;trace=[]
  log_path=run_dir/"run.log"
  with log_path.open("a") as lf: lf.write(f"START condition={condition} seed={seed} split_seed={split_seed} fold={fold_i+1}"+chr(10))
@@ -227,7 +235,7 @@ def main():
  a=ap.parse_args()
  if a.smoke_only:
   a.epochs=1;a.patience=1;a.pairs_per_recording=256
- out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
+ out=Path(a.output);out.mkdir(parents=True,exist_ok=True)
  data,coords=load_recordings(a.metadata)
  graph=spatial_graph(coords,6)
  graph_info={"nodes":graph.number_of_nodes(),"edges":graph.number_of_edges(),"connected":nx.is_connected(graph),
@@ -243,7 +251,7 @@ def main():
   if not nx.is_connected(rg) or sorted(dict(rg.degree()).values())!=sorted(dict(graph.degree()).values()):raise RuntimeError("Rewire invariant failed")
  np.save(out/"spatial_edges.npy",np.array(sorted((min(i,j),max(i,j)) for i,j in graph.edges()),dtype="<i4"))
  # One deterministic grouped split for smoke test; full 225 grid uses the frozen 5x3x3x5 design.
- oids=sorted(set(d["oid"] for d in data));summaries=[]
+ oids=sorted(set(d["oid"] for d in data));summaries=[]\n status_path=out/"run_status.json"\n if status_path.exists():\n  try: summaries=json.loads(status_path.read_text()).get("runs",[])\n  except Exception: summaries=[]\n completed_keys={(r.get("split_seed"),r.get("fold"),r.get("condition"),r.get("seed")) for r in summaries}
  split_count=0
  for split_seed in SPLIT_SEEDS:
   perm=np.random.default_rng(split_seed).permutation(oids);folds=np.array_split(perm,5)
@@ -256,16 +264,16 @@ def main():
      if a.smoke_only and (split_seed!=SPLIT_SEEDS[0] or fold_i!=0 or init_seed!=INIT_SEEDS[0] or condition not in ("node_mlp","spatial_k6")):continue
      run_summary=fit_one(data,train_oids,val_oids,test_oids,condition,init_seed,coords,a,out,split_seed,fold_i)
      run_summary.update({"split_seed":split_seed,"fold":fold_i+1})
-     summaries.append(run_summary);split_count+=1
-     (out/"run_status.json").write_text(json.dumps({"completed_fits":split_count,"expected_fits":2 if a.smoke_only else 225,"runs":summaries},indent=2))
+     summaries.append(run_summary);completed_keys.add(key);split_count+=1
+     (out/"run_status.json").write_text(json.dumps({"completed_fits":len(completed_keys),"expected_fits":2 if a.smoke_only else 225,"runs":summaries},indent=2))
      print(json.dumps({"completed":split_count,"condition":condition,"split_seed":split_seed,"fold":fold_i+1,"init_seed":init_seed,**run_summary}),flush=True)
      if a.smoke_only and split_count>=2:break
     if a.smoke_only and split_count>=2:break
    if a.smoke_only and split_count>=2:break
   if a.smoke_only and split_count>=2:break
- if not a.smoke_only and split_count!=225:raise RuntimeError(f"Expected 225 fits, got {split_count}")
+ if not a.smoke_only and len(completed_keys)!=225:raise RuntimeError(f"Expected 225 completed fits, got {len(completed_keys)}")
  (out/"final_summary.json").write_text(json.dumps({"experiment_id":"G2-R3-RECONSTRUCTION-20261124",
-  "status":"smoke_complete" if a.smoke_only else "complete","n_fits":split_count,"runs":summaries},indent=2))
+  "status":"smoke_complete" if a.smoke_only else "complete","n_fits":len(completed_keys),"runs":summaries},indent=2))
  files=[p for p in out.rglob("*") if p.is_file()]
  (out/"manifest.sha256").write_text("\n".join(f"{sha256(p)}  {p.relative_to(out)}" for p in sorted(files))+"\n")
 if __name__=="__main__":main()
