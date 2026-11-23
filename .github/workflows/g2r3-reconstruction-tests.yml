@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - integration/old-research-assets
-    paths:
-      - "scripts/run_g2r3_reconstruction.py"
-      - "tests/test_g2r3_reconstruction.py"
-      - ".github/workflows/g2r3-reconstruction-tests.yml"
   workflow_dispatch:
 
 permissions:
