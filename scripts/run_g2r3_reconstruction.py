@@ -221,8 +221,9 @@ def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir
  (run_dir/"summary.json").write_text(json.dumps(summary,indent=2))
  with log_path.open("a") as lf: lf.write(f"COMPLETE best_epoch={best_epoch} best_val_mae={best:.8f}"+chr(10))
  run_files=[q for q in run_dir.rglob("*") if q.is_file() and q.name!="manifest.sha256"]
- (run_dir/"manifest.sha256").write_text(chr(10).join(f"{sha256(q)}  {q.relative_to(run_dir)}" for q in sorted(run_files))+chr(10))
  (run_dir/"environment.txt").write_text(f"python={sys.version}\nplatform={platform.platform()}\nnumpy={np.__version__}\ntorch={torch.__version__}\nnetworkx={nx.__version__}\ndevice={device}\n")
+ run_files=[q for q in run_dir.rglob("*") if q.is_file() and q.name!="manifest.sha256"]
+ (run_dir/"manifest.sha256").write_text(chr(10).join(f"{sha256(q)}  {q.relative_to(run_dir)}" for q in sorted(run_files))+chr(10))
  return summary
 
 def main():
@@ -251,7 +252,12 @@ def main():
   if not nx.is_connected(rg) or sorted(dict(rg.degree()).values())!=sorted(dict(graph.degree()).values()):raise RuntimeError("Rewire invariant failed")
  np.save(out/"spatial_edges.npy",np.array(sorted((min(i,j),max(i,j)) for i,j in graph.edges()),dtype="<i4"))
  # One deterministic grouped split for smoke test; full 225 grid uses the frozen 5x3x3x5 design.
- oids=sorted(set(d["oid"] for d in data));summaries=[]\n status_path=out/"run_status.json"\n if status_path.exists():\n  try: summaries=json.loads(status_path.read_text()).get("runs",[])\n  except Exception: summaries=[]\n completed_keys={(r.get("split_seed"),r.get("fold"),r.get("condition"),r.get("seed")) for r in summaries}
+ oids=sorted(set(d["oid"] for d in data));summaries=[]
+ status_path=out/"run_status.json"
+ if status_path.exists():
+  try: summaries=json.loads(status_path.read_text()).get("runs",[])
+  except Exception: summaries=[]
+ completed_keys={(r.get("split_seed"),r.get("fold"),r.get("condition"),r.get("seed")) for r in summaries}
  split_count=0
  for split_seed in SPLIT_SEEDS:
   perm=np.random.default_rng(split_seed).permutation(oids);folds=np.array_split(perm,5)
@@ -262,6 +268,8 @@ def main():
    for init_seed in INIT_SEEDS:
     for condition in CONDITIONS:
      if a.smoke_only and (split_seed!=SPLIT_SEEDS[0] or fold_i!=0 or init_seed!=INIT_SEEDS[0] or condition not in ("node_mlp","spatial_k6")):continue
+     key=(split_seed,fold_i+1,condition,init_seed)
+     if key in completed_keys: continue
      run_summary=fit_one(data,train_oids,val_oids,test_oids,condition,init_seed,coords,a,out,split_seed,fold_i)
      run_summary.update({"split_seed":split_seed,"fold":fold_i+1})
      summaries.append(run_summary);completed_keys.add(key);split_count+=1
