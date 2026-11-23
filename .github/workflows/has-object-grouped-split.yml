@@ -1,0 +1,54 @@
+name: HAS object-grouped split builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: "Deterministic split seed"
+        required: true
+        default: "20261123"
+        type: string
+      revision:
+        description: "Optional immutable Hugging Face dataset commit SHA"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: has-object-grouped-split
+  cancel-in-progress: false
+
+jobs:
+  build-splits:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip datasets
+      - name: Build object-disjoint split manifests
+        shell: bash
+        env:
+          SPLIT_SEED: ${{ inputs.seed }}
+          DATASET_REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          ARGS=(--seed "${SPLIT_SEED}" --out results/has_object_grouped_split)
+          if [[ -n "${DATASET_REVISION}" ]]; then ARGS+=(--revision "${DATASET_REVISION}"); fi
+          python scripts/build_has_object_grouped_splits.py "${ARGS[@]}"
+      - name: Upload split manifests and audit trail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: has-object-grouped-split-${{ github.run_id }}
+          path: results/has_object_grouped_split/
+          if-no-files-found: warn
+          retention-days: 90
