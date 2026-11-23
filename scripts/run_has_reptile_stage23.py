@@ -105,10 +105,12 @@ def main():
   # Update-matched pooled MLP: exactly B*K gradient steps per meta-iteration.
   pooled=Net();pooled.load_state_dict(initial);opt=torch.optim.AdamW(pooled.parameters(),lr=a.inner_lr,weight_decay=1e-3);ptrace=[]
   for step in range(a.iterations*a.meta_batch*a.inner_steps):
-   batch=np.random.choice(tr,size=8,replace=len(tr)<8)
+   # Object-balanced pooled minibatch: sample one training object uniformly, then its episodes.
+   ob=np.random.choice(train_objects);ix=task_idx["train"][ob]
+   batch=np.random.choice(ix,size=8,replace=len(ix)<8)
    opt.zero_grad();loss=nn.functional.mse_loss(pooled(xt[batch]),yt[batch]);loss.backward();opt.step()
    if step%100==0 or step==a.iterations*a.meta_batch*a.inner_steps-1:
-    ptrace.append({"update":step+1,"train_loss":float(loss.detach())})
+    ptrace.append({"update":step+1,"sampled_object":ob,"train_loss":float(loss.detach())})
   torch.save(pooled.state_dict(),out/f"pooled_seed{seed}.pt")
   with (out/f"reptile_seed{seed}_trace.csv").open("w",newline="") as f:
    w=csv.DictWriter(f,fieldnames=list(rtrace[0]));w.writeheader();w.writerows(rtrace)
