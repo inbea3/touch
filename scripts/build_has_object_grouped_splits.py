@@ -41,10 +41,13 @@ def main():
             elif episodes[key]["label_id"]!=lab:
                 raise RuntimeError(f"Episode label changed within {key}")
     by_obj=defaultdict(list)
-    for rec in episodes.values(): by_obj[rec["object_group"]].append(rec)
+    excluded_negative=[]
+    for rec in episodes.values():
+        if rec["object_group"] == "negative":
+            excluded_negative.append(rec)
+        else:
+            by_obj[rec["object_group"]].append(rec)
     objects=sorted(by_obj)
-    if "negative" in by_obj:
-        raise RuntimeError("Negative/no-object episodes require a separately defined policy; do not silently group them with physical objects.")
     rng=random.Random(a.seed)
     # Exact object counts: 21 train / 6 validation / 6 test for 33 groups.
     # Greedy assignment balances episode counts while preserving the fixed object counts.
@@ -70,6 +73,9 @@ def main():
         for rec in by_obj[obj]:
             rows.append({**rec,"grouped_split":assigned[obj]})
     rows.sort(key=lambda r:(SPLITS.index(r["grouped_split"]),r["object_group"],r["official_split"],r["episode_index"]))
+    with (out/"excluded_negative_episodes.csv").open("w",newline="",encoding="utf-8") as f:
+        fields=["official_split","episode_index","label_id","label_name","object_group"]
+        w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(excluded_negative)
     with (out/"episode_split_manifest.csv").open("w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f,fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
     objrows=[{"object_group":o,"grouped_split":assigned[o],"n_episodes":len(by_obj[o]),
@@ -77,14 +83,15 @@ def main():
     with (out/"object_split_manifest.csv").open("w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f,fieldnames=list(objrows[0])); w.writeheader(); w.writerows(objrows)
     summary={"dataset":DATASET,"revision":a.revision,"seed":a.seed,"allowed_fields":list(ALLOWED),
-      "n_objects":len(objects),"n_episodes":len(episodes),
+      "n_objects":len(objects),"n_episodes_in_object_task":len(rows),
+      "n_excluded_negative_episodes":len(excluded_negative),
       "object_counts":{s:sum(assigned[o]==s for o in objects) for s in SPLITS},
       "episode_counts":{s:sum(assigned[o]==s for o in objects for _ in by_obj[o]) for s in SPLITS},
       "episode_weighted_counts":{s:sum(len(by_obj[o]) for o in objects if assigned[o]==s) for s in SPLITS},
       "objects_by_split":{s: [o for o in objects if assigned[o]==s] for s in SPLITS},
       "official_split_crossing_retained_as_metadata":True,
       "grouping_rule":"base physical object category; weight suffix variants grouped together",
-      "interpretation":"Object-disjoint exploratory split. With only 33 object categories, estimates will have wide uncertainty; split seed must be locked before modelling."}
+      "interpretation":"Negative/no-object episodes are excluded from the object-conditioned prediction task and listed separately. Object-disjoint exploratory split. With only 33 object categories, estimates will have wide uncertainty; split seed must be locked before modelling."}
     (out/"summary.json").write_text(json.dumps(summary,indent=2),encoding="utf-8")
     def sha(p):
         h=hashlib.sha256(p.read_bytes()).hexdigest(); return f"{h}  {p.name}"
