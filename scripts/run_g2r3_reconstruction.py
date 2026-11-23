@@ -169,7 +169,7 @@ def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir
   return rec_rows,obj_rows
  best=float("inf");best_epoch=0;wait=0;trace=[]
  log_path=run_dir/"run.log"
- with log_path.open("a") as lf: lf.write(f"START condition={condition} seed={seed} split_seed={split_seed} fold={fold_i+1}\\n")
+ with log_path.open("a") as lf: lf.write(f"START condition={condition} seed={seed} split_seed={split_seed} fold={fold_i+1}"+chr(10))
  run_dir=outdir/f"split{split_seed}_fold{fold_i+1}_{condition}_init{seed}";run_dir.mkdir(parents=True,exist_ok=False)
  config={"condition":condition,"seed":seed,"train_objects":sorted(train_oids),"validation_objects":sorted(val_oids),
   "test_objects":sorted(test_oids),"epochs":args.epochs,"patience":args.patience,"lr":args.lr,
@@ -189,7 +189,7 @@ def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir
    loss.backward();opt.step();losses.append(float(loss.detach().cpu()))
   vr,vo=eval_group(val);v=float(np.mean([r["mae"] for r in vo]))
   trace.append({"epoch":epoch,"train_loss":float(np.mean(losses)),"validation_object_macro_mae":v})
-  with log_path.open("a") as lf: lf.write(f"epoch={epoch} train_loss={float(np.mean(losses)):.8f} val_object_macro_mae={v:.8f} best={best:.8f}\\n")
+  with log_path.open("a") as lf: lf.write(f"epoch={epoch} train_loss={float(np.mean(losses)):.8f} val_object_macro_mae={v:.8f} best={best:.8f}"+chr(10))
   with (run_dir/"training_trace.csv").open("w",newline="") as f:
    w=csv.DictWriter(f,fieldnames=list(trace[0]));w.writeheader();w.writerows(trace)
   if v<best-args.min_delta:
@@ -211,9 +211,9 @@ def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir
   "test_object_macro_exploratory":{k:float(np.mean([r[k] for r in test_obj])) for k in ("mae","rmse","spearman")},
   "n_train_objects":len(train_oids),"n_validation_objects":len(val_oids),"n_test_objects":len(test_oids)}
  (run_dir/"summary.json").write_text(json.dumps(summary,indent=2))
- with log_path.open("a") as lf: lf.write(f"COMPLETE best_epoch={best_epoch} best_val_mae={best:.8f}\\n")
+ with log_path.open("a") as lf: lf.write(f"COMPLETE best_epoch={best_epoch} best_val_mae={best:.8f}"+chr(10))
  run_files=[q for q in run_dir.rglob("*") if q.is_file() and q.name!="manifest.sha256"]
- (run_dir/"manifest.sha256").write_text("\\n".join(f"{sha256(q)}  {q.relative_to(run_dir)}" for q in sorted(run_files))+"\\n")
+ (run_dir/"manifest.sha256").write_text(chr(10).join(f"{sha256(q)}  {q.relative_to(run_dir)}" for q in sorted(run_files))+chr(10))
  (run_dir/"environment.txt").write_text(f"python={sys.version}\nplatform={platform.platform()}\nnumpy={np.__version__}\ntorch={torch.__version__}\nnetworkx={nx.__version__}\ndevice={device}\n")
  return summary
 
