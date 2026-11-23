@@ -1,0 +1,60 @@
+name: HAS matched window dataset
+
+on:
+  workflow_dispatch:
+    inputs:
+      split_run_id:
+        description: "Successful object-grouped split workflow run ID"
+        required: true
+        default: "45112395632"
+        type: string
+      dataset_revision:
+        description: "Immutable Hugging Face dataset revision"
+        required: true
+        default: "4fd8e7e91b0b3ccca8306cc9f07657af19f73ddf"
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: has-matched-window-dataset
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download frozen object split manifests
+        uses: actions/download-artifact@v4
+        with:
+          name: has-object-grouped-split-${{ inputs.split_run_id }}
+          run-id: ${{ inputs.split_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: inbea3/touch
+          path: results/has_object_grouped_split
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip datasets numpy huggingface_hub
+      - name: Build matched windows
+        env:
+          REVISION: ${{ inputs.dataset_revision }}
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/build_has_window_dataset.py
+          python scripts/build_has_window_dataset.py --revision "${REVISION}"
+      - name: Upload window datasets and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: has-window-dataset-${{ github.run_id }}
+          path: results/has_window_dataset/
+          if-no-files-found: warn
+          retention-days: 90
