@@ -76,7 +76,7 @@ def main():
   "channel_policy":{"primary_42ch":"exclude channels 18 and 25","sensitivity_all44":"retain all 44 channels"},
   "dimensions":{"primary_42ch":{"input":168,"future_mean":42,"future_corr":861},
                 "sensitivity_all44":{"input":176,"future_mean":44,"future_corr":946}},
-  "architecture":[168,256,128,"output"],"dropout":0.2,"optimizer":"AdamW",
+  "architecture":"input -> 256 ReLU -> dropout(0.2) -> 128 ReLU -> dropout(0.2) -> output","optimizer":"AdamW","dropout":0.2,
   "learning_rate":0.001,"weight_decay":0.001,"batch_size":a.batch_size,
   "max_epochs":a.epochs,"early_stopping_patience":a.patience,"seeds":[int(x) for x in a.seeds.split(",")],
   "selection":"minimum validation standardized MSE; test evaluated only after checkpoint selection",
@@ -89,6 +89,7 @@ def main():
   xm=xx[train].mean(0); xs=xx[train].std(0); xs[xs<1e-8]=1
   ym=yy[train].mean(0); ys=yy[train].std(0); ys[ys<1e-8]=1
   xn=((xx-xm)/xs).astype(np.float32); yn=((yy-ym)/ys).astype(np.float32)
+  np.savez_compressed(out/f"{task}_scalers.npz",x_mean=xm,x_std=xs,y_mean=ym,y_std=ys)
   # simple non-neural reference baselines
   if t["kind"]=="future_mean":
    last=xx[:,3*t["nch"]:4*t["nch"]] # last-value block after channel filtering
@@ -133,6 +134,8 @@ def main():
   # mean/std across initialization seeds, not independent test objects
   all_results[task]={"test_baselines":base_metrics,"runs":seed_results}
   del xn,yn
+ with (out/"test_episode_index.csv").open("w",newline="",encoding="utf-8") as f:
+  w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows([rows[i] for i in test])
  (out/"metrics.json").write_text(json.dumps(all_results,indent=2))
  (out/"environment.txt").write_text(f"python={sys.version}\nplatform={platform.platform()}\ntorch={torch.__version__}\nnumpy={np.__version__}\n")
  log(f"COMPLETE elapsed_seconds={time.time()-start:.1f}")
