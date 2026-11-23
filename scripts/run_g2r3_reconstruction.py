@@ -87,7 +87,7 @@ def spatial_graph(coords,k=6):
 
 def rewired_graph(g,seed):
  h=g.copy()
- nx.connected_double_edge_swap(h,nswap=10*h.number_of_edges(),seed=seed,max_tries=1000* h.number_of_edges())
+ nx.connected_double_edge_swap(h,nswap=10*h.number_of_edges(),seed=seed)
  if not nx.is_connected(h): raise RuntimeError("Rewired graph disconnected")
  if sorted(dict(g.degree()).values())!=sorted(dict(h.degree()).values()): raise RuntimeError("Degree sequence changed")
  return h
