@@ -1,0 +1,64 @@
+name: HAS signal diagnostics
+
+on:
+  workflow_dispatch:
+    inputs:
+      feature_run_id:
+        description: "Verified Stage 19 feature artifact run ID"
+        required: true
+        default: "45115559336"
+        type: string
+      ridge_alphas:
+        description: "Ridge alpha candidates (comma-separated)"
+        required: true
+        default: "0.1,1,10,100,1000"
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: has-signal-diagnostics
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download verified Stage 19 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: has-pressure-feature-dataset-${{ inputs.feature_run_id }}
+          run-id: ${{ inputs.feature_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: inbea3/touch
+          path: results/has_feature_dataset
+      - name: Verify source artifact checksums
+        run: |
+          cd results/has_feature_dataset
+          sha256sum -c manifest.sha256
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip numpy scipy scikit-learn
+      - name: Run signal diagnostics
+        env:
+          ALPHAS: ${{ inputs.ridge_alphas }}
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/run_has_signal_diagnostics.py
+          python scripts/run_has_signal_diagnostics.py --alphas "${ALPHAS}"
+      - name: Upload diagnostics and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: has-signal-diagnostics-${{ github.run_id }}
+          path: results/has_signal_diagnostics/
+          if-no-files-found: warn
+          retention-days: 90
