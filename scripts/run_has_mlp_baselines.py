@@ -63,17 +63,19 @@ def main():
  train=np.where(splits=="train")[0]; val=np.where(splits=="validation")[0]; test=np.where(splits=="test")[0]
  objsets={s:set(objects[splits==s]) for s in ("train","validation","test")}
  if any(objsets[x]&objsets[y] for x,y in (("train","validation"),("train","test"),("validation","test"))): raise RuntimeError("Object leakage")
- # Primary protocol excludes channels 18 and 25 from input blocks and targets.
- keep_ch=np.array([i for i in range(44) if i not in (18,25)])
- keep_x=np.concatenate([keep_ch,44+keep_ch,88+keep_ch,132+keep_ch])
- keep_pairs=np.where(np.isin(ci,keep_ch)&np.isin(cj,keep_ch))[0]
- tasks={
-  "future_mean":{"X":X[:,keep_x],"Y":Ym[:,keep_ch],"baseline":"persistence_last"},
-  "future_corr":{"X":X[:,keep_x],"Y":R[:,keep_pairs],"baseline":"zero"}
- }
+ # Primary analysis excludes the two globally constant channels; all-channel sensitivity is retained.
+ policies={"primary_42ch":np.array([i for i in range(44) if i not in (18,25)]),
+           "sensitivity_all44":np.arange(44)}
+ tasks={}
+ for policy,ch in policies.items():
+  xcols=np.concatenate([ch,44+ch,88+ch,132+ch])
+  paircols=np.where(np.isin(ci,ch)&np.isin(cj,ch))[0]
+  tasks[f"{policy}_future_mean"]={"X":X[:,xcols],"Y":Ym[:,ch],"kind":"future_mean","nch":len(ch)}
+  tasks[f"{policy}_future_corr"]={"X":X[:,xcols],"Y":R[:,paircols],"kind":"future_corr","nch":len(ch)}
  config={"data":"HAS Stage19 artifact","n_episodes":len(rows),"split_seed":20261123,
-  "channel_policy":"primary excludes exactly constant channels 18 and 25",
-  "input_dim":168,"future_mean_output_dim":42,"future_corr_output_dim":861,
+  "channel_policy":{"primary_42ch":"exclude channels 18 and 25","sensitivity_all44":"retain all 44 channels"},
+  "dimensions":{"primary_42ch":{"input":168,"future_mean":42,"future_corr":861},
+                "sensitivity_all44":{"input":176,"future_mean":44,"future_corr":946}},
   "architecture":[168,256,128,"output"],"dropout":0.2,"optimizer":"AdamW",
   "learning_rate":0.001,"weight_decay":0.001,"batch_size":a.batch_size,
   "max_epochs":a.epochs,"early_stopping_patience":a.patience,"seeds":[int(x) for x in a.seeds.split(",")],
@@ -88,8 +90,8 @@ def main():
   ym=yy[train].mean(0); ys=yy[train].std(0); ys[ys<1e-8]=1
   xn=((xx-xm)/xs).astype(np.float32); yn=((yy-ym)/ys).astype(np.float32)
   # simple non-neural reference baselines
-  if task=="future_mean":
-   last=xx[:,3*42:4*42] # last-value block after channel filtering
+  if t["kind"]=="future_mean":
+   last=xx[:,3*t["nch"]:4*t["nch"]] # last-value block after channel filtering
    base_preds={"train_mean":np.repeat(yy[train].mean(0,keepdims=True),len(test),axis=0),"last_value":last[test]}
   else:
    base_preds={"zero_corr":np.zeros_like(yy[test]),"train_mean_corr":np.repeat(yy[train].mean(0,keepdims=True),len(test),axis=0)}
