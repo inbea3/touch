@@ -131,7 +131,7 @@ def metrics(y,p):
  else:rho=float("nan")
  return {"mae":float(np.mean(np.abs(e))),"rmse":float(np.sqrt(np.mean(e*e))),"spearman":rho}
 
-def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir):
+def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir,split_seed,fold_i):
  seed_all(seed);device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
  graph=None
  if condition=="spatial_k6":graph=spatial_graph(coords,6)
@@ -168,7 +168,7 @@ def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir
    obj_rows.append({"object_id":oid,**{k:float(np.mean([r[k] for r in rs])) for k in ("mae","rmse","spearman")}})
   return rec_rows,obj_rows
  best=float("inf");best_epoch=0;wait=0;trace=[]
- run_dir=outdir/f"{condition}_seed{seed}";run_dir.mkdir(parents=True,exist_ok=False)
+ run_dir=outdir/f"split{split_seed}_fold{fold_i+1}_{condition}_init{seed}";run_dir.mkdir(parents=True,exist_ok=False)
  config={"condition":condition,"seed":seed,"train_objects":sorted(train_oids),"validation_objects":sorted(val_oids),
   "test_objects":sorted(test_oids),"epochs":args.epochs,"patience":args.patience,"lr":args.lr,
   "weight_decay":args.weight_decay,"pair_sample_per_recording_epoch":args.pairs_per_recording,
@@ -245,7 +245,7 @@ def main():
    for init_seed in INIT_SEEDS:
     for condition in CONDITIONS:
      if a.smoke_only and (split_seed!=SPLIT_SEEDS[0] or fold_i!=0 or init_seed!=INIT_SEEDS[0] or condition not in ("node_mlp","spatial_k6")):continue
-     run_summary=fit_one(data,train_oids,val_oids,test_oids,condition,init_seed,coords,a,out)
+     run_summary=fit_one(data,train_oids,val_oids,test_oids,condition,init_seed,coords,a,out,split_seed,fold_i)
      run_summary.update({"split_seed":split_seed,"fold":fold_i+1})
      summaries.append(run_summary);split_count+=1
      (out/"run_status.json").write_text(json.dumps({"completed_fits":split_count,"expected_fits":2 if a.smoke_only else 225,"runs":summaries},indent=2))
