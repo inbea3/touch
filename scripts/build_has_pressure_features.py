@@ -186,9 +186,10 @@ def main():
     (out/"summary.json").write_text(json.dumps(summary,indent=2),encoding="utf-8")
     (out/"summary.md").write_text("# HAS feature dataset summary\n\n"+json.dumps(summary,indent=2)+"\n",encoding="utf-8")
     (out/"environment.txt").write_text(f"python={sys.version}\nplatform={platform.platform()}\nnumpy={np.__version__}\n",encoding="utf-8")
+    log(f"DONE episodes={len(index_rows)} frames={total_frames} elapsed={summary['elapsed_seconds']:.1f}s")
+    # Finalize run.log before hashing all outputs.
     files=sorted(x for x in out.iterdir() if x.is_file() and x.name!="manifest.sha256")
     (out/"manifest.sha256").write_text("\n".join(f"{sha256(x)}  {x.name}" for x in files)+"\n",encoding="utf-8")
-    log(f"DONE episodes={len(index_rows)} frames={total_frames} elapsed={summary['elapsed_seconds']:.1f}s")
     print(json.dumps(summary,indent=2))
 
 if __name__=="__main__": main()
