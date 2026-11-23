@@ -96,7 +96,15 @@ def main():
    base_preds={"train_mean":np.repeat(yy[train].mean(0,keepdims=True),len(test),axis=0),"last_value":last[test]}
   else:
    base_preds={"zero_corr":np.zeros_like(yy[test]),"train_mean_corr":np.repeat(yy[train].mean(0,keepdims=True),len(test),axis=0)}
-  base_metrics={k:{q:v for q,v in metrics(yy[test],p).items() if q not in ("episode_mae","episode_rmse")} for k,p in base_preds.items()}
+  base_metrics={}
+  for base_name,base_pred in base_preds.items():
+   bm=metrics(yy[test],base_pred); bp=[]
+   for ob in sorted(objsets["test"]):
+    bix=np.where(objects[test]==ob)[0]; om=metrics(yy[test][bix],base_pred[bix])
+    bp.append({"object_group":ob,"n_episodes":len(bix),"mae":om["mae"],"rmse":om["rmse"],"mean_episode_spearman":om["mean_episode_spearman"]})
+   base_metrics[base_name]={"episode_weighted":{"mae":bm["mae"],"rmse":bm["rmse"],"mean_episode_spearman":bm["mean_episode_spearman"]},
+     "object_macro":{"mae":float(np.mean([q["mae"] for q in bp])),"rmse":float(np.mean([q["rmse"] for q in bp]))},
+     "per_object":bp}
   seed_results=[]
   for sd in config["seeds"]:
    seed_all(sd); model=MLP(xn.shape[1],yn.shape[1])
