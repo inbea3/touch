@@ -53,7 +53,8 @@ def main():
     # Greedy assignment balances episode counts while preserving the fixed object counts.
     shuffled=objects[:]; rng.shuffle(shuffled)
     targets={"train":21,"validation":6,"test":6}
-    target_eps={k:len(episodes)*v/len(objects) for k,v in targets.items()}
+    eligible_episode_total=sum(len(v) for v in by_obj.values())
+    target_eps={k:eligible_episode_total*v/len(objects) for k,v in targets.items()}
     counts={k:0 for k in targets}; assigned={}
     # Largest episode groups first; deterministic seeded tie-breaking.
     tie={o:rng.random() for o in objects}
