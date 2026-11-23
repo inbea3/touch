@@ -1,0 +1,79 @@
+name: HAS Reptile cross-object adaptation
+
+on:
+  workflow_dispatch:
+    inputs:
+      window_run_id:
+        description: "Verified Stage 22A matched-window dataset run ID"
+        required: true
+        default: "45193420854"
+        type: string
+      window:
+        description: "Observation window (5 primary; 10 sensitivity)"
+        required: true
+        default: "5"
+        type: choice
+        options:
+          - "5"
+          - "10"
+      iterations:
+        description: "Reptile meta-iterations"
+        required: true
+        default: "300"
+        type: string
+      seeds:
+        description: "Random seeds"
+        required: true
+        default: "20261123,20261124,20261125"
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: has-reptile-stage23-${{ inputs.window }}
+  cancel-in-progress: false
+
+jobs:
+  reptile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download frozen matched-window dataset
+        uses: actions/download-artifact@v4
+        with:
+          name: has-window-dataset-${{ inputs.window_run_id }}
+          run-id: ${{ inputs.window_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: inbea3/touch
+          path: results/has_window_dataset
+      - name: Verify source data checksums
+        run: |
+          cd results/has_window_dataset
+          sha256sum -c manifest.sha256
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip numpy scipy torch
+      - name: Run Reptile and update-matched pooled MLP
+        env:
+          WINDOW: ${{ inputs.window }}
+          ITERATIONS: ${{ inputs.iterations }}
+          SEEDS: ${{ inputs.seeds }}
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/run_has_reptile_stage23.py
+          python scripts/run_has_reptile_stage23.py --window "${WINDOW}" --iterations "${ITERATIONS}" --seeds "${SEEDS}"
+      - name: Upload checkpoints, traces, predictions and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: has-reptile-stage23-${{ github.run_id }}-w${{ inputs.window }}
+          path: results/has_reptile_stage23/
+          if-no-files-found: warn
+          retention-days: 90
