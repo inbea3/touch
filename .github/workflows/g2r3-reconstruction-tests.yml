@@ -2,6 +2,13 @@ name: G2-R3 reconstruction module tests
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - integration/old-research-assets
+    paths:
+      - 'scripts/run_g2r3_reconstruction.py'
+      - 'tests/test_g2r3_reconstruction.py'
+      - '.github/workflows/g2r3-reconstruction-tests.yml'
 
 permissions:
   contents: read
