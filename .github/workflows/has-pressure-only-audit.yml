@@ -1,6 +1,12 @@
 name: HAS pressure-only external audit
 
 on:
+  push:
+    branches: [integration/old-research-assets]
+    paths:
+      - '.github/workflows/has-pressure-only-audit.yml'
+      - 'scripts/audit_has_pressure_only.py'
+      - 'data/has_label_mapping.json'
   workflow_dispatch:
     inputs:
       max_rows_per_split:
