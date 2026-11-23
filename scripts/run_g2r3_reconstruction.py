@@ -167,10 +167,10 @@ def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir
   for oid,rs in obj.items():
    obj_rows.append({"object_id":oid,**{k:float(np.mean([r[k] for r in rs])) for k in ("mae","rmse","spearman")}})
   return rec_rows,obj_rows
+ run_dir=outdir/f"split{split_seed}_fold{fold_i+1}_{condition}_init{seed}";run_dir.mkdir(parents=True,exist_ok=False)
  best=float("inf");best_epoch=0;wait=0;trace=[]
  log_path=run_dir/"run.log"
  with log_path.open("a") as lf: lf.write(f"START condition={condition} seed={seed} split_seed={split_seed} fold={fold_i+1}"+chr(10))
- run_dir=outdir/f"split{split_seed}_fold{fold_i+1}_{condition}_init{seed}";run_dir.mkdir(parents=True,exist_ok=False)
  config={"condition":condition,"seed":seed,"train_objects":sorted(train_oids),"validation_objects":sorted(val_oids),
   "test_objects":sorted(test_oids),"epochs":args.epochs,"patience":args.patience,"lr":args.lr,
   "weight_decay":args.weight_decay,"pair_sample_per_recording_epoch":args.pairs_per_recording,
@@ -232,7 +232,7 @@ def main():
   "coordinate_order":"numpy.argwhere(active_mask), row-major"}
  (out/"data_audit.json").write_text(json.dumps({"recordings":len(data),"objects":len(set(d["oid"] for d in data)),
   "sensors":len(coords),"graph":graph_info,"recording_coverage":[{k:d[k] for k in ("rid","oid","name","input_span","input_contiguous","n_future")} for d in data]},indent=2))
- (out/"sensor_coordinates.npy").write_bytes(np.asarray(coords,dtype="<f4").tobytes())
+ np.save(out/"sensor_coordinates.npy",np.asarray(coords,dtype="<f4"))
  for seed in REWIRE_SEEDS:
   rg=rewired_graph(graph,seed)
   edges=np.array(sorted((min(i,j),max(i,j)) for i,j in rg.edges()),dtype="<i4")
