@@ -323,3 +323,13 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 首轮只做 dataset revision/license/file manifest、episode label consistency、物理对象与 weight variant 映射、官方 split 是否 object-disjoint、episode 时长/时间戳、44 通道质量和重复 episode 数量审计。只有足够物理对象具有多个完整 episode、且仅用允许字段可定义早期/未来窗口后，才另立 HAS-specific target protocol。
 - 对象级划分必须把同一物理对象的所有 weight variants 放在同一 outer fold；不能把 61 个 object-weight labels 当成 61 个独立物体。若对象级样本量不足或 episode 标签/目标定义不清，停止模型训练。
 - 该数据候选来自官方数据卡与官方代码仓库：Hugging Face `TUM-ICS/Hide-and-Seek`；GitHub `tactile-hide-and-seek/Tactile-Hide-and-Seek`。许可为 CC BY 4.0，使用时需按要求署名。外部结果与 STAG 结果分开报告，不混合原始通道或宣称同硬件验证。
+
+
+## 阶段十七实施补充（2026-11-23：HAS pressure-only 审计工具链已提交）
+
+- 已新增 `scripts/audit_has_pressure_only.py`，严格只保留 `obs_skin_force_left`、`timestamp`、`episode_index`、`classification_label` 四个字段；采用 streaming 逐行读取，不写出原始压力向量。
+- 已新增 `data/has_label_mapping.json`，映射内容取自官方 `tactile-hide-and-seek/Tactile-Hide-and-Seek` 仓库的 `data/label_mapping.json`。
+- 已新增手动触发 workflow：`.github/workflows/has-pressure-only-audit.yml`。workflow 上传 90 天 artifact，包含 config、run.log、episode inventory、object split audit、channel quality、label consistency、summary 和 SHA-256 manifest。
+- 本次提交只建立可复现审计工具链，**尚未运行 workflow，也未下载/实测完整数据**。因此 episode 数、物体级 split overlap、时间戳质量、通道统计及 Go/No-Go 仍全部待实测。
+- GitHub commits：script `93d67833ff53139c9c7d0e32d4e305b0d8f432aa`；mapping `abde74f90af2d7708ee4d8d2e67b6ab8ffefcf7a`；workflow `f170f1c80c91ef6f444e3af66eb946dcd476c15b`。
+- 执行方式：在 GitHub Actions 选择 “HAS pressure-only external audit”，输入 `max_rows_per_split=0` 运行完整审计；首次可先用小样本检查工具链，但小样本结果不得用于 Go/No-Go。
