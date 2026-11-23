@@ -12,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 from datasets import load_dataset
+from huggingface_hub import HfApi
 
 DATASET = "TUM-ICS/Hide-and-Seek"
 SOURCE_SPLITS = ("train", "validation", "test")
@@ -37,6 +38,7 @@ def main():
     a=p.parse_args()
     out=Path(a.out); out.mkdir(parents=True,exist_ok=False)
     started=time.time()
+    resolved_revision=a.revision or HfApi().dataset_info(DATASET).sha
     log_path=out/"run.log"
     def log(msg):
         line=f"[{datetime.now(timezone.utc).isoformat()}] {msg}"
@@ -119,10 +121,11 @@ def main():
         da["positive_edges"]+=int(edges.sum()); da["total_edges"]+=len(edges)
         da["constant_channels"]+=int(np.sum(var<=1e-15))
 
-    log(f"START dataset={DATASET} revision={a.revision or 'hub-default-provisional'} episodes={len(split_rows)}")
+    (out/"config.json").write_text(json.dumps({"dataset":DATASET,"resolved_revision":resolved_revision,"split_seed":20261123,"early_frames":EARLY_FRAMES,"minimum_episode_frames":MIN_FRAMES,"feature_definition":["mean","population_std","timestamp_slope","last"],"future_targets":["mean","population_std","pearson_upper_triangle","pearson_ge_0.7"],"allowed_fields":["obs_skin_force_left","timestamp","episode_index","classification_label"]},indent=2),encoding="utf-8")
+    log(f"START dataset={DATASET} revision={resolved_revision} episodes={len(split_rows)}")
     for source_split in SOURCE_SPLITS:
         kw={"split":source_split,"streaming":True}
-        if a.revision: kw["revision"]=a.revision
+        kw["revision"]=resolved_revision
         ds=load_dataset(DATASET,**kw)
         log(f"LOADED source_split={source_split}")
         active_key=None; state=None; closed=set()
@@ -171,7 +174,7 @@ def main():
                 "episodes":da["episodes"],"positive_edge_fraction":da["positive_edges"]/max(da["total_edges"],1)})
     with (out/"channel_diagnostics.csv").open("w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f,fieldnames=list(diag[0])); w.writeheader(); w.writerows(diag)
-    summary={"dataset":DATASET,"revision":a.revision,"revision_status":"pinned" if a.revision else "UNPINNED_PROVISIONAL",
+    summary={"dataset":DATASET,"revision":resolved_revision,"revision_status":"pinned_resolved_at_run_start",
         "split_seed":20261123,"early_frames":EARLY_FRAMES,"min_episode_frames":MIN_FRAMES,
         "feature_shape":list(X.shape),"future_mean_shape":list(Ymean.shape),"future_std_shape":list(Ystd.shape),
         "future_corr_shape":list(R.shape),"edge_shape":list(E.shape),"source_frames_processed":total_frames,
