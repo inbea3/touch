@@ -23,6 +23,7 @@ def main():
     p.add_argument("--out",default="results/has_object_grouped_split")
     a=p.parse_args()
     out=Path(a.out); out.mkdir(parents=True,exist_ok=True)
+    (out/"config.json").write_text(json.dumps({"dataset":DATASET,"seed":a.seed,"revision":a.revision,"allowed_fields":list(ALLOWED),"object_targets":{"train":21,"validation":6,"test":6}},indent=2),encoding="utf-8")
     mapping=json.loads(Path("data/has_label_mapping.json").read_text())
     id_to_name={int(v):k for k,v in mapping["classification_labels"].items()}
     episodes={}
@@ -55,18 +56,20 @@ def main():
     targets={"train":21,"validation":6,"test":6}
     eligible_episode_total=sum(len(v) for v in by_obj.values())
     target_eps={k:eligible_episode_total*v/len(objects) for k,v in targets.items()}
-    counts={k:0 for k in targets}; assigned={}
+    object_counts={k:0 for k in targets}; episode_counts={k:0 for k in targets}; assigned={}
     # Largest episode groups first; deterministic seeded tie-breaking.
     tie={o:rng.random() for o in objects}
     order=sorted(shuffled,key=lambda o:(-len(by_obj[o]),tie[o]))
     for obj in order:
-        available=[s for s in SPLITS if counts[s]<targets[s]]
+        available=[s for s in SPLITS if object_counts[s]<targets[s]]
         # Minimize normalized episode-count deviation after assigning this group.
         def cost(s):
-            trial={k:counts[k]+(len(by_obj[obj]) if k==s else 0) for k in SPLITS}
+            trial={k:episode_counts[k]+(len(by_obj[obj]) if k==s else 0) for k in SPLITS}
             return sum(((trial[k]-target_eps[k])/max(target_eps[k],1))**2 for k in SPLITS)
+        if not available:
+            raise RuntimeError(f"Object quota exhausted before assigning {obj}; object_counts={object_counts}, targets={targets}")
         chosen=min(available,key=lambda s:(cost(s),SPLITS.index(s)))
-        assigned[obj]=chosen; counts[chosen]+=len(by_obj[obj])
+        assigned[obj]=chosen; object_counts[chosen]+=1; episode_counts[chosen]+=len(by_obj[obj])
     if {s:sum(assigned[o]==s for o in objects) for s in SPLITS}!=targets:
         raise RuntimeError("Object count allocation invariant failed")
     rows=[]
@@ -87,7 +90,7 @@ def main():
       "n_objects":len(objects),"n_episodes_in_object_task":len(rows),
       "n_excluded_negative_episodes":len(excluded_negative),
       "object_counts":{s:sum(assigned[o]==s for o in objects) for s in SPLITS},
-      "episode_counts":{s:sum(assigned[o]==s for o in objects for _ in by_obj[o]) for s in SPLITS},
+      "episode_counts":{s:sum(len(by_obj[o]) for o in objects if assigned[o]==s) for s in SPLITS},
       "episode_weighted_counts":{s:sum(len(by_obj[o]) for o in objects if assigned[o]==s) for s in SPLITS},
       "objects_by_split":{s: [o for o in objects if assigned[o]==s] for s in SPLITS},
       "official_split_crossing_retained_as_metadata":True,
@@ -99,5 +102,6 @@ def main():
     files=sorted(x for x in out.iterdir() if x.is_file() and x.name!="manifest.sha256")
     (out/"manifest.sha256").write_text("\n".join(sha(x) for x in files)+"\n")
     (out/"environment.txt").write_text(f"python={sys.version}\nplatform={platform.platform()}\n")
+    (out/"run.log").write_text(f"Completed object-disjoint split construction\nseed={a.seed}\nobjects={len(objects)}\nepisodes={len(rows)}\n",encoding="utf-8")
     print(json.dumps(summary,indent=2))
 if __name__=="__main__": main()
