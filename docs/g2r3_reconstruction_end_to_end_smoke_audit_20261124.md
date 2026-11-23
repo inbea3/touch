@@ -26,3 +26,13 @@ These values are smoke-test diagnostics only. One epoch, one split, one initiali
 1. Execute the committed script's own `--smoke-only` CLI path after the source-level output-directory fix.
 2. Run repository unit tests and verify script compilation.
 3. Only after successful gates, launch the prespecified 225-fit grid.
+
+## Additional topology and five-condition module checks
+- Three connected degree-preserving rewired graphs were generated from the corrected 1,966-edge spatial graph.
+- Successful connected edge swaps: 19,226 / 19,215 / 19,186 for seeds 2026112201 / 2026112202 / 2026112203.
+- Rewired edge-list SHA-256:
+  - 2026112201: `d26d64dcae978a47e374b2a538c73708ca7d91ab219436675d17863ed92a45b1`
+  - 2026112202: `e46d9b65f8ce52c989e422a1881aabd8b2e5554959e8738b6c111e462a5f179d`
+  - 2026112203: `882a8953759549a99b451895a548a4a203244e1171a448e8b481571eafca4fb1`
+- All five conditions passed an additional forward/backward module check. Loss and gradients were finite; pair-order maximum absolute prediction difference was 0.0 for every condition.
+- These checks validate graph/model mechanics, not comparative predictive performance.
