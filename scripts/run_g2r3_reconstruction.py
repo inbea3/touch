@@ -220,7 +220,6 @@ def fit_one(data,train_oids,val_oids,test_oids,condition,seed,coords,args,outdir
   "n_train_objects":len(train_oids),"n_validation_objects":len(val_oids),"n_test_objects":len(test_oids)}
  (run_dir/"summary.json").write_text(json.dumps(summary,indent=2))
  with log_path.open("a") as lf: lf.write(f"COMPLETE best_epoch={best_epoch} best_val_mae={best:.8f}"+chr(10))
- run_files=[q for q in run_dir.rglob("*") if q.is_file() and q.name!="manifest.sha256"]
  (run_dir/"environment.txt").write_text(f"python={sys.version}\nplatform={platform.platform()}\nnumpy={np.__version__}\ntorch={torch.__version__}\nnetworkx={nx.__version__}\ndevice={device}\n")
  run_files=[q for q in run_dir.rglob("*") if q.is_file() and q.name!="manifest.sha256"]
  (run_dir/"manifest.sha256").write_text(chr(10).join(f"{sha256(q)}  {q.relative_to(run_dir)}" for q in sorted(run_files))+chr(10))
@@ -282,6 +281,6 @@ def main():
  if not a.smoke_only and len(completed_keys)!=225:raise RuntimeError(f"Expected 225 completed fits, got {len(completed_keys)}")
  (out/"final_summary.json").write_text(json.dumps({"experiment_id":"G2-R3-RECONSTRUCTION-20261124",
   "status":"smoke_complete" if a.smoke_only else "complete","n_fits":len(completed_keys),"runs":summaries},indent=2))
- files=[p for p in out.rglob("*") if p.is_file()]
+ files=[p for p in out.rglob("*") if p.is_file() and p.name!="manifest.sha256"]
  (out/"manifest.sha256").write_text("\n".join(f"{sha256(p)}  {p.relative_to(out)}" for p in sorted(files))+"\n")
 if __name__=="__main__":main()
