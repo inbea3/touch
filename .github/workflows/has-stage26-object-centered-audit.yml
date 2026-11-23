@@ -1,0 +1,65 @@
+name: HAS object-centered residual audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      window_run_id:
+        description: "Stage 22A dataset artifact run"
+        required: true
+        default: "45193420854"
+        type: string
+      ridge_alpha:
+        description: "Fixed Stage 24B Ridge alpha"
+        required: true
+        default: "1000"
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: has-stage26-object-centered-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download frozen Stage 22A dataset
+        uses: actions/download-artifact@v4
+        with:
+          name: has-window-dataset-${{ inputs.window_run_id }}
+          run-id: ${{ inputs.window_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: inbea3/touch
+          path: results/has_window_dataset
+      - name: Verify source artifact
+        run: |
+          set -euo pipefail
+          cd results/has_window_dataset
+          sha256sum -c manifest.sha256
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip numpy scikit-learn
+      - name: Run object-centered residual audit
+        env:
+          RIDGE_ALPHA: ${{ inputs.ridge_alpha }}
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/run_has_stage26_object_centered_audit.py
+          python scripts/run_has_stage26_object_centered_audit.py --ridge-alpha "${RIDGE_ALPHA}"
+      - name: Upload diagnostics and retained traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: has-stage26-object-centered-audit-${{ github.run_id }}
+          path: results/has_stage26_object_centered_audit/
+          if-no-files-found: warn
+          retention-days: 90
