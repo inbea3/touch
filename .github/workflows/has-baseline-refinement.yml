@@ -1,0 +1,70 @@
+name: HAS baseline refinement
+
+on:
+  workflow_dispatch:
+    inputs:
+      feature_run_id:
+        description: "Verified Stage 19 feature artifact"
+        required: true
+        default: "45115559336"
+        type: string
+      epochs:
+        description: "Maximum residual-MLP epochs"
+        required: true
+        default: "200"
+        type: string
+      seeds:
+        description: "Initialization seeds"
+        required: true
+        default: "20261123,20261124,20261125"
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: has-baseline-refinement
+  cancel-in-progress: false
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download verified Stage 19 features
+        uses: actions/download-artifact@v4
+        with:
+          name: has-pressure-feature-dataset-${{ inputs.feature_run_id }}
+          run-id: ${{ inputs.feature_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: inbea3/touch
+          path: results/has_feature_dataset
+      - name: Verify input checksums
+        run: |
+          cd results/has_feature_dataset
+          sha256sum -c manifest.sha256
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip numpy scipy scikit-learn joblib torch
+      - name: Run validation-selected baseline refinement
+        env:
+          EPOCHS: ${{ inputs.epochs }}
+          SEEDS: ${{ inputs.seeds }}
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/run_has_baseline_refinement.py
+          python scripts/run_has_baseline_refinement.py --epochs "${EPOCHS}" --seeds "${SEEDS}"
+      - name: Upload models, predictions, traces and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: has-baseline-refinement-${{ github.run_id }}
+          path: results/has_baseline_refinement/
+          if-no-files-found: warn
+          retention-days: 90
