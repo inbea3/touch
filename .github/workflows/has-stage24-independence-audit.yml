@@ -1,0 +1,67 @@
+name: HAS trajectory independence audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      window_run_id:
+        description: "Stage 22A matched-window dataset run"
+        required: true
+        default: "45193420854"
+        type: string
+      reptile_run_id:
+        description: "Stage 23 Reptile run"
+        required: true
+        default: "45201237382"
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download Stage 22A window index
+        uses: actions/download-artifact@v4
+        with:
+          name: has-window-dataset-${{ inputs.window_run_id }}
+          run-id: ${{ inputs.window_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: inbea3/touch
+          path: results/has_window_dataset
+      - name: Download Stage 23 evaluation records
+        uses: actions/download-artifact@v4
+        with:
+          name: has-reptile-stage23-${{ inputs.reptile_run_id }}-w5
+          run-id: ${{ inputs.reptile_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: inbea3/touch
+          path: results/has_reptile_stage23
+      - name: Verify source artifacts
+        run: |
+          set -euo pipefail
+          (cd results/has_window_dataset && sha256sum -c manifest.sha256)
+          (cd results/has_reptile_stage23 && sha256sum -c manifest.sha256)
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip numpy
+      - name: Run trajectory independence audit
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/run_has_stage24_independence_audit.py
+          python scripts/run_has_stage24_independence_audit.py --window-data results/has_window_dataset --reptile-csv results/has_reptile_stage23/episode_metrics.csv
+      - name: Upload audit and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: has-stage24-independence-audit-${{ github.run_id }}
+          path: results/has_stage24_independence_audit/
+          if-no-files-found: warn
+          retention-days: 90
