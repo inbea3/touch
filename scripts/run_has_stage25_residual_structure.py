@@ -92,7 +92,7 @@ def main():
  with (out/"object_metrics.csv").open("w",newline="") as f:
   w=csv.DictWriter(f,fieldnames=list(object_rows[0]));w.writeheader();w.writerows(object_rows)
  # Channel-wise residual target distributions on Train only are descriptive diagnostics.
- summary["train_residual_target"]={"mean_abs_channel_mean":float(np.mean(np.abs(D[tr].mean(0))),
+ summary["train_residual_target"]={"mean_abs_channel_mean":float(np.mean(np.abs(D[tr].mean(0)))) ,
  "median_channel_sd":float(np.median(D[tr].std(0))),
  "channels_sd_below_1e-6":int(np.sum(D[tr].std(0)<1e-6))}
  summary["interpretation_limits"]=["Residual correlation is predictive error covariance, not a physical adjacency graph.",
