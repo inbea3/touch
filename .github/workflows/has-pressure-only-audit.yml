@@ -1,0 +1,58 @@
+name: HAS pressure-only external audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_rows_per_split:
+        description: "Diagnostic row cap per split (0 = full dataset)"
+        required: true
+        default: "0"
+        type: string
+      revision:
+        description: "Optional immutable Hugging Face dataset commit SHA"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: has-pressure-only-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip datasets numpy
+      - name: Run full pressure-only audit
+        shell: bash
+        env:
+          MAX_ROWS: ${{ inputs.max_rows_per_split }}
+          DATASET_REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          ARGS=(--output-dir results/has_external_audit --max-rows-per-split "${MAX_ROWS:-0}")
+          if [[ -n "${DATASET_REVISION:-}" ]]; then
+            ARGS+=(--revision "$DATASET_REVISION")
+          fi
+          python scripts/audit_has_pressure_only.py "${ARGS[@]}"
+      - name: Upload audit trail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: has-pressure-only-audit-${{ github.run_id }}
+          path: results/has_external_audit/
+          if-no-files-found: warn
+          retention-days: 90
