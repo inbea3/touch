@@ -127,8 +127,15 @@ def main():
     w=csv.DictWriter(f,fieldnames=["epoch","train_mse","validation_mse"]);w.writeheader();w.writerows(trace)
    with (out/f"{task}_seed{sd}_test_predictions.npz").open("wb") as f:
     np.savez_compressed(f,y_true=yy[test],y_pred=pred)
+   # Object is the inferential unit; summarize the six held-out objects equally.
+   obj_mae=np.array([q["mae"] for q in per_obj],dtype=float)
+   rng=np.random.default_rng(sd+17)
+   boot=np.array([rng.choice(obj_mae,size=len(obj_mae),replace=True).mean() for _ in range(2000)])
    seed_results.append({"seed":sd,"best_epoch":best_epoch,"best_validation_mse":best,
-    "test":{"mae":met["mae"],"rmse":met["rmse"],"mean_episode_spearman":met["mean_episode_spearman"]},
+    "test_episode_weighted":{"mae":met["mae"],"rmse":met["rmse"],"mean_episode_spearman":met["mean_episode_spearman"]},
+    "test_object_macro":{"mae":float(obj_mae.mean()),"mae_object_bootstrap_95ci":[float(np.quantile(boot,.025)),float(np.quantile(boot,.975))],
+      "rmse":float(np.mean([q["rmse"] for q in per_obj])),
+      "mean_episode_spearman":float(np.nanmean([q["mean_episode_spearman"] for q in per_obj]))},
     "per_object":per_obj})
    log(f"task={task} seed={sd} best_epoch={best_epoch} test_mae={met['mae']:.6f} test_rmse={met['rmse']:.6f}")
   # mean/std across initialization seeds, not independent test objects
