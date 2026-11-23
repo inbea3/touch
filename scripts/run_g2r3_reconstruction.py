@@ -224,7 +224,10 @@ def main():
  ap.add_argument("--min-delta",type=float,default=1e-5);ap.add_argument("--lr",type=float,default=5e-4)
  ap.add_argument("--weight-decay",type=float,default=1e-3);ap.add_argument("--pairs-per-recording",type=int,default=8192)
  ap.add_argument("--eval-chunk",type=int,default=32768);ap.add_argument("--smoke-only",action="store_true")
- a=ap.parse_args();out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
+ a=ap.parse_args()
+ if a.smoke_only:
+  a.epochs=1;a.patience=1;a.pairs_per_recording=256
+ out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
  data,coords=load_recordings(a.metadata)
  graph=spatial_graph(coords,6)
  graph_info={"nodes":graph.number_of_nodes(),"edges":graph.number_of_edges(),"connected":nx.is_connected(graph),
