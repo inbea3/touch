@@ -65,25 +65,32 @@ Purpose: retain the known 96-node baseline as the reference and quantify sensiti
 - Do not tune on historical Meta-test.
 
 ### E02 — G2-R2 evidence audit
-Purpose: verify the full-548 graph experiment before any new run.
-- Retrieve the exact G2-R2 report, source commit, 15 fold manifests, feature/preprocessing definitions, graph construction, training curves, checkpoints, and object-level metrics.
-- Verify the reported 15/15 fold completion and k6 primary candidate, with k4/k8 as neighborhood ablations.
-- Reconcile Node-MLP baseline, model initialization, split IDs, metric aggregation, and whether validation was nested within each fold.
-- Do not infer missing metrics from memory or from the 96-node experiment.
+Purpose: preserve the full-548 graph experiment as a distinct experimental stream and audit its evidence.
+- Dataset scope: 548 sensors, 26 objects, 78 recordings, 149,878 unordered sensor pairs per recording.
+- Outer split seeds: 20261119, 20261120, 20261121; five object-grouped folds per seed; 15 folds total.
+- Input: earliest five valid pressure frames; target: subsequent valid-frame Pearson correlations.
+- Transform: clip((pressure - 500)/150, 0, 1).
+- Node features: 10 dimensions — mean, standard deviation, minimum, maximum, range, slope, last value, first value, normalized x and y.
+- Recorded metrics (MAE / RMSE / Spearman): Node-MLP 0.120538 / 0.157582 / 0.344821; k4 0.120255 / 0.157204 / 0.343845; k6 0.120172 / 0.157116 / 0.344356; k8 0.120209 / 0.157171 / 0.343664.
+- k6 vs Node-MLP: MAE difference -0.000353 (k6 lower), approximately 0.3%; 22/26 objects favour k6; Spearman difference +0.000085. Treat as a small preliminary increment, not conclusive evidence.
+- Reported real k6 vs degree-preserving rewired k6 MAE difference: +0.000655 in favour of real k6; 6/26 objects favour the rewired graph.
+- Training ran approximately 45–50 epochs; convergence was not established. Full-node k4/k8 sensitivity is not yet considered fully audited.
+- Before any new R3 run, retrieve the exact G2-R2 report, 15 fold manifests, feature/preprocessing code, graph constructor, validation selection procedure, traces/checkpoints, and per-object metrics. Resolve any mismatch between summary tables and detailed outputs.
 
 ### E03 — G2-R3 initialization robustness and topology random control
-Purpose: test whether k6 graph gains persist across initialization and exceed a degree-preserving randomized topology.
-Frozen scope from the current project decision:
-- Compare repeated Node-MLP and k6 graph initializations under the same fold/data/features/training budget.
-- Compare the selected k6 topology against degree-preserving randomly rewired k6 controls.
-- Use 100–150 epochs with internal validation; exact epoch count, patience, optimizer, seeds, rewiring count, and fold-level selection must be filled from the G2-R2 implementation/report before launch.
-- Primary analysis: paired object-level k6 vs Node-MLP and k6 vs randomized-k6 effects, with object-level uncertainty.
-- Report initialization variability separately from object variability.
-- Do not select a favourable seed or graph realization post hoc.
-- Do not combine Reptile with this run. Establish spatial-graph robustness first.
-- Keep all per-seed training traces, validation curves, best checkpoints, graph edge lists, rewiring seeds and object-level metrics.
+Purpose: determine whether the observed k6 increment is robust to initialization and exceeds a degree/connectedness-preserving randomized topology.
+- This run was already started on 2026-11-22 07:48:14 UTC. The latest available log snapshot at retrieval reported status running and 8/225 model runs complete; do not assume that snapshot is the current completion state. First recover the latest run log, progress checkpoint and manifest before taking action.
+- Design: 5 object-grouped folds × 3 split seeds (20261119–20261121) × 3 initialization seeds (20261123–20261125).
+- Conditions per fold/seed: Node-MLP, real spatial k6, and three connected degree-preserving rewired k6 graphs.
+- Rewire seeds: 2026112201, 2026112202, 2026112203.
+- Training: 20% internal validation; max 100 epochs; patience 15; min_delta 1e-5; AdamW learning rate 0.0005; weight decay 0.001; validation pairs 8192; evaluation chunk 32768.
+- The total planned model runs are 225. Preserve every initialization and graph realization; do not select the best random seed/rewiring realization post hoc.
+- Primary comparisons: paired object-level real-k6 vs Node-MLP; real-k6 vs the distribution of rewired-k6 controls. Report initialization variance separately from object-level uncertainty.
+- Retain per-run training/validation traces, best checkpoints, edge lists, rewire seeds, object-level metrics, progress checkpoints and timestamped logs.
+- Do not combine Reptile with this run. Establish graph/topology robustness first.
+- Source hashes recorded in the launch log: run_g2r3_robustness.py 56c8cc…bf897f; run_full548_gnn_comparison.py d03f7b…3d86; run_g2r2_nested_cv.py af6735…55fd9.
 
-Execution gate: do not start E03 until E02 audit resolves exact data split, graph constructor, metric and training config. If a field cannot be recovered, record it as a protocol deviation and obtain explicit approval before proceeding.
+Execution gate: recover the latest R3 progress and outputs first. If the run completed, audit all 225 expected runs and compare results to the frozen protocol. If it is still running, resume/monitor the existing run rather than launching a duplicate. If it failed, preserve the failed run and logs before any controlled restart.
 
 ### E04 — Reptile replication and interpretation
 Purpose: retain existing Reptile evidence and prevent overclaim.
