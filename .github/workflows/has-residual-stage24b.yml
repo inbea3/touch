@@ -1,0 +1,71 @@
+name: HAS persistence residual benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      window_run_id:
+        description: "Stage 22A matched-window dataset run"
+        required: true
+        default: "45193420854"
+        type: string
+      seeds:
+        description: "MLP random seeds"
+        required: true
+        default: "20261126,20261127,20261128"
+        type: string
+      epochs:
+        description: "Maximum MLP epochs"
+        required: true
+        default: "400"
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: has-residual-stage24b
+  cancel-in-progress: false
+
+jobs:
+  residual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download frozen 5-frame dataset
+        uses: actions/download-artifact@v4
+        with:
+          name: has-window-dataset-${{ inputs.window_run_id }}
+          run-id: ${{ inputs.window_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: inbea3/touch
+          path: results/has_window_dataset
+      - name: Verify source data
+        run: |
+          set -euo pipefail
+          cd results/has_window_dataset
+          sha256sum -c manifest.sha256
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip numpy scikit-learn torch
+      - name: Run residual benchmark
+        env:
+          SEEDS: ${{ inputs.seeds }}
+          EPOCHS: ${{ inputs.epochs }}
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/run_has_residual_stage24b.py
+          python scripts/run_has_residual_stage24b.py --seeds "${SEEDS}" --epochs "${EPOCHS}"
+      - name: Upload models, traces, metrics and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: has-residual-stage24b-${{ github.run_id }}
+          path: results/has_residual_stage24b/
+          if-no-files-found: warn
+          retention-days: 90
