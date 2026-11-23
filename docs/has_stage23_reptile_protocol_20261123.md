@@ -10,8 +10,8 @@ Does a Reptile initialization learned across training object tasks improve few-s
 
 ## Task and sample definition
 - Meta-task: one object_group.
-- Sample: one pressure episode row (168-D input; 42-D future-mean target).
-- Support/query split is within each object, by episode row; no episode may appear in both.
+- Sample: one pressure episode/trajectory, identified by `(official_split, episode_index)` (168-D input; 42-D future-mean target). The upstream dataset schema describes `episode_index` as the episode/trajectory identifier.
+- Support/query split is within each object, by distinct trajectory key; no trajectory may appear in both. The published frame schema does not expose a higher-level recording-session identifier, so claims are limited to trajectory-level separation.
 - Primary shots: 1, 5 and 10 support episodes. Query uses all remaining episodes for that object.
 - Meta-train tasks: 21 train objects; Meta-validation: 6 validation objects; Meta-test: 6 test objects.
 - 5-frame window is primary; 10-frame window is a secondary sensitivity run. 20-frame window is excluded based on Stage 22B.
