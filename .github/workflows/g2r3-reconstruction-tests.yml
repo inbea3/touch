@@ -1,0 +1,26 @@
+name: G2-R3 reconstruction module tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/old-research-assets
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install test dependencies
+        run: python -m pip install numpy scipy networkx torch
+      - name: Compile reconstruction script
+        run: python -m py_compile scripts/run_g2r3_reconstruction.py
+      - name: Run graph and model invariance tests
+        run: python -m unittest discover -s tests -p "test_g2r3_reconstruction.py" -v
