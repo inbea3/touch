@@ -58,7 +58,7 @@ Test paired MAE differences favor Reptile modestly for 5/6 objects at all shots;
 3. Test's small Reptile MAE advantage is exploratory and conflicts with Validation; it must not be used to claim success or select the method.
 4. Reptile yields higher per-episode channel Spearman than pooled MLP, suggesting it changes channel-wise ordering, but this is a secondary metric and does not establish practical predictive superiority.
 5. Do not proceed to expensive Reptile tuning or MAML yet. Diagnose task/sample independence, support sampling, model calibration, persistence-relative residual targets, and the high within-object episode dependence first.
-6. The dataset index has object and episode identifiers but does not record a verified original recording/trial identifier in this benchmark output. Therefore, episode-level random Support/Query separation may not guarantee recording-level independence. This is a protocol limitation to resolve before stronger few-shot generalization claims.
+6. The published HAS frame schema documents `episode_index` as the episode/trajectory identifier. The Stage 23 Support/Query split is therefore interpretable as trajectory-level separation when keyed by `(official_split, episode_index)`. The published frame schema does not expose a higher-level recording-session ID, so independence across collection sessions cannot be asserted. Stage 24 audits trajectory-key uniqueness, object/split consistency, and Support/Query disjointness.
 
 ## Provenance
 
