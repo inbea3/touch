@@ -29,8 +29,8 @@ Status: input verified; sensor mask recovered; graph candidate constructed; mode
 ## Reconstructed spatial k=6 candidate
 - Euclidean distance on physical (row, column) sensor coordinates.
 - For each node, select its six nearest other sensors; symmetrize by union (A = A OR A.T); remove self-loops.
-- Result: 548 nodes, 1,925 undirected edges, degree range 6–11, median degree 7, one connected component.
-- Edge-list SHA-256 (sorted i<j pairs, little-endian int16 bytes): ee7fe5fafbed3882d375868df7c3a431218088b56eec661c142fc7e191e022ad.
+- Result: 548 nodes, 1,966 undirected edges, degree range 6–10, median degree 7, one connected component.
+- Edge-list SHA-256 (sorted i<j pairs, little-endian int16 bytes): df15364f3efbec0fd22ff192768bd19c2c5dee8597c2a2150ba19ed51709229c.
 - Important: this is a documented reconstruction choice, not a recovered historical edge list. The term k=6 means six outgoing nearest neighbors before symmetrization; final undirected degree is not exactly six.
 
 ## Reproduction boundary and next gate
@@ -39,3 +39,5 @@ Status: input verified; sensor mask recovered; graph candidate constructed; mode
 - The historical G2-R3 source scripts and exact graph edge list remain unavailable. The graph above is therefore a new, explicit reconstruction candidate.
 - Before the 225-fit grid, implement and test degree-preserving connected rewiring; verify all five model conditions; freeze architecture/decoder and data pipeline deviations; run one end-to-end smoke fit and preserve config, environment, epoch trace, checkpoint, logs and hashes.
 - No training was launched during this audit.
+## Recheck correction
+A direct recomputation against the uploaded metadata and the current row-major active mask corrected an earlier preliminary graph count: the symmetrized six-nearest-neighbor graph contains 1,966 edges (not 1,925), with degree range 6–10. The corrected edge-list hash above uses sorted undirected pairs encoded as little-endian int32, matching the reconstruction script. The earlier preliminary count/hash should not be used.
