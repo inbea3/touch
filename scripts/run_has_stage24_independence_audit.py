@@ -15,7 +15,7 @@ def ids(s):
 def main():
  ap=argparse.ArgumentParser()
  ap.add_argument("--window-data",default="results/has_window_dataset")
- ap.add_argument("--reptile-zip",default="results/has_reptile_stage23.zip")
+ ap.add_argument("--reptile-csv",default="results/has_reptile_stage23/episode_metrics.csv")
  ap.add_argument("--out",default="results/has_stage24_independence_audit")
  a=ap.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=False);t0=time.time()
  def log(msg):
@@ -33,8 +33,7 @@ def main():
  overlaps={f"{x}-{y}":sorted(split_objects[x]&split_objects[y]) for x,y in (("train","validation"),("train","test"),("validation","test"))}
  if any(overlaps.values()):raise RuntimeError(f"Object leakage: {overlaps}")
  # Reptile artifact is a zip; no extraction of weights is required for ID audit.
- z=zipfile.ZipFile(a.reptile_zip)
- with z.open("episode_metrics.csv") as f:metrics=list(csv.DictReader(line.decode() for line in f))
+ with open(a.reptile_csv,encoding="utf-8",newline="") as f:metrics=list(csv.DictReader(f))
  if not metrics:raise RuntimeError("No episode metrics")
  errors=[];support_rows=[];support_cache={}
  for r in metrics:
