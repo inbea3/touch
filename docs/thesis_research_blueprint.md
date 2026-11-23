@@ -76,9 +76,15 @@
 - 当前不支持将 Weight 聚合目标并入主任务或将 grasp 数当成新增独立物体任务。
 
 ### 5.5 G2 完整 548 节点空间图实验流（与 96 节点任务分开管理）
-- 已有项目记录显示 G2-R2 完成 15/15 folds；k6 是候选主图，k4/k8 为邻域规模消融。
-- 阶段 A 将 G2-R3 冻结为初始化鲁棒性与拓扑随机控制：Node-MLP/k6 多随机初始化；degree-preserving random rewired k6 图；100–150 epochs，使用内部 validation；报告物体级配对效应和不确定性。
-- 具体 G2-R2 指标、划分清单、特征定义、脚本参数、R3 精确执行参数必须从对应报告/运行产物复核后再运行；本蓝图不补造缺失数值。G2 与 Reptile 不在 R3 阶段合并训练。
+- G2-R2 使用 548 个传感器、26 个物体/78 条 recording，每条 recording 有 149,878 个无向传感器对；split seeds 为 20261119、20261120、20261121，每个 seed 5 folds，共 15 个外层 folds。
+- 输入为最早 5 个有效压力帧，目标为后续有效帧 Pearson 相关；压力变换为 clip((pressure-500)/150, 0, 1)；节点特征为 10 维（mean/std/min/max/range/slope/last/first 及归一化 x/y）。
+- G2-R2 已完成 15/15 folds。已记录 MAE：Node-MLP 0.120538、k4 0.120255、k6 0.120172、k8 0.120209；对应 RMSE：0.157582、0.157204、0.157116、0.157171；Spearman：0.344821、0.343845、0.344356、0.343664。k6 的 MAE 相对 Node-MLP 差值为 -0.000353，约 0.3%，22/26 物体更好；Spearman 差值仅 +0.000085。现阶段增量较小，不能仅凭平均值宣称空间图有实质优势。
+- 现有报告还指出，k6 相对 degree-preserving rewired k6 的 MAE 差值为 +0.000655（正值表示真实 k6 更低），仅 6/26 物体有利于随机重连图。该比较需要结合 R3 的重复初始化和随机拓扑分布判断。
+- G2-R2 训练约 45–50 epochs，尚未确认收敛；完整 k4/k8 稳健性分析仍需核对，不能把初步邻域比较等同于完整消融。
+- G2-R3 已于 2026-11-22 07:48:14 UTC 启动，日志快照时状态 running、225 个模型运行中完成 8 个。设计为 5-fold object-grouped CV × 3 split seeds（20261119–20261121）× 3 initialization seeds（20261123–20261125）；比较 Node-MLP、真实空间 k6 和 3 个 degree/connectedness-preserving rewired k6 图。
+- R3 配置：20% 内部 validation；最多 100 epochs；patience 15；min_delta 1e-5；AdamW lr=0.0005、weight_decay=0.001；validation pairs 8192；evaluation chunk 32768；rewire seeds 2026112201–2026112203。
+- R3 源脚本哈希：run_g2r3_robustness.py 56c8cc…bf897f；run_full548_gnn_comparison.py d03f7b…3d86；run_g2r2_nested_cv.py af6735…55fd9。运行日志与 checkpoint 必须保留；当前 8/225 是历史日志快照，不代表此刻运行状态。
+- 阶段 A 的决策：不把 G2 与 Reptile 合并；先完成 R3 的初始化鲁棒性和拓扑随机控制，再决定图模型是否有足够增量。
 
 ## 6. 模型比较层级
 
