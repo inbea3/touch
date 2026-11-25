@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Balanced six-episode, three-participant TouchScale tactile structure pilot."""
+"""Balanced six-episode, three-participant TouchScale tactile structure pilot.
+Exploratory extraction only; no full-dataset download."""
 from __future__ import annotations
 import io, json, os, tarfile, time
 from collections import defaultdict
