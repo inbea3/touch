@@ -199,6 +199,7 @@ These are candidate contributions, not pre-asserted discoveries. Do not claim no
 - Task types include clear single-object actions, component actions (zipper/cap), tool-mediated tasks, multi-object transfers/sorting, and scene setup/reset. The first item in items must not be treated as the target object.
 - Decision: no TouchScale object-level few-shot training yet. First define the annotation codebook, annotate the 100 sample (double-annotate a subset if possible), preserve ambiguous cases, and build the repeated-target/actor/date/shard table.
 - Review workbook: touchscale_primary_object_review_100.xlsx (provided separately). Full report: docs/touchscale_primary_object_sample_review_20261125.md.
+- Annotation rules are frozen in docs/touchscale_primary_object_annotation_codebook_v1.md; double-annotate at least 20–30 episodes before treating the labels as reliable.
 
 ## 11. Current status (2026-11-25)
 
