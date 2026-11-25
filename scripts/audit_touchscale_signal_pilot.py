@@ -110,7 +110,7 @@ def inspect_h5(blob):
             out[f"has_{p.replace('/','_')}"]=p in f
     return out
 
-def main():
+def file_sha256(path):\n    h=hashlib.sha256()\n    with Path(path).open("rb") as stream:\n        for block in iter(lambda: stream.read(1024*1024), b""):\n            h.update(block)\n    return h.hexdigest()\n\ndef main():
     out=Path("artifacts/touchscale_signal_pilot"); out.mkdir(parents=True,exist_ok=True)
     token=os.environ.get("HF_TOKEN")
     if not token: raise RuntimeError("HF_TOKEN secret missing")
