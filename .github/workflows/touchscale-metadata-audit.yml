@@ -1,0 +1,43 @@
+name: TouchScale metadata audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Hugging Face dataset revision
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: thesis-few-shot-structure-20261125
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install audit dependencies
+        run: python -m pip install -r requirements-touchscale-audit.txt
+      - name: Download metadata only and audit
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::Repository secret HF_TOKEN is missing. Accept TouchScale access terms and add a read token as HF_TOKEN."
+            exit 1
+          fi
+          python scripts/audit_touchscale_metadata.py --revision "${{ inputs.revision }}" --output artifacts/touchscale_metadata_audit
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchscale-metadata-audit
+          path: artifacts/touchscale_metadata_audit/
+          if-no-files-found: warn
