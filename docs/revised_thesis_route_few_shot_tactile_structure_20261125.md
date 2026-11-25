@@ -230,9 +230,26 @@ These are candidate contributions, not pre-asserted discoveries. Do not claim no
 
 ## 11. Current status (2026-11-25)
 
-- Research direction selected by the researcher: adapt to unseen objects; target spatial co-activation structure; audit TouchScale first; first experiment priority is whether few-shot adaptation improves structure prediction.
-- Literature review is exploratory; exact novelty is not established.
-- Public metadata and geometry have been inspected at record level. The metadata/geometry gate passed.
-- No TouchScale raw data have been downloaded or trained on.
-- Primary-object identity and independent Support/Query feasibility gates remain open; no TouchScale model training has started.
-- Current G2-R3 execution status must be checked from its live process/workflow artifacts before reporting completion or stopping it.
+- Research direction: adapt to unseen objects; target spatial co-activation structure; public TouchScale data audit is the first data gate.
+- Metadata/geometry audit: passed at the structural level (15,324 episodes; 880 taxels per hand; 15 pads per hand). This does not establish object identity or few-shot task feasibility.
+- Full task-intent classification: 15,324 episodes mapped to 7 broad interaction families across 920 scene/task templates. These labels are task-intent labels, not verified primary-object IDs.
+- 100-episode raw HDF5 audit v2: completed successfully; 100/100 episode files and JSON metadata found after correcting one mistyped UUID; 200/200 hand records processed.
+- Signal integrity: all 200 hand timestamp sequences monotonic; no gaps >0.25 s; maximum gap 0.0778 s; 15 pads and 880 taxels per hand; finite-value fraction 1.0.
+- Rate calibration: reciprocal median inter-sample interval was biased by irregular intervals (median interval CV ≈0.299). Use effective rate `(N-1)/(t_last-t_first)`; median effective rate 56.91 Hz vs metadata median 57.0 Hz; median absolute error 0.099 Hz. 43/200 hand records still differ by >2 Hz and remain flagged.
+- Contact QC: official dataset documentation confirms per-taxel calibrated normal force in N and defines contact fraction as summed normal force >3 N. Recomputed-vs-metadata contact fraction correlation is 0.9978, but MAE is 0.0405 (4.05 percentage points); inspect outliers before strict contact filtering.
+- Within-episode split-half spatial-structure correlation median: left 0.458, right 0.359. This is exploratory temporal repeatability only, not cross-object generalization or adaptation evidence.
+- One missing episode in the first 100-row manifest was a malformed UUID; the corrected UUID `88430eb1-984f-4a5f-926e-7893708db835` is present. The corrected manifest has 100/100 files.
+- 300-episode stratified raw-signal audit: workflow run [45600096911](https://github.com/inbea3/touch/actions/runs/45600096911) was launched across 15 shards and all 22 scene types; final results are pending.
+- No TouchScale model training has started. Object identity, interaction-tuple annotation, actor-disjoint Support/Query feasibility, and a valid future-structure prediction target remain open gates.
+- Historical G2-R3 execution is separate from the TouchScale signal audit; verify its current workflow/process state independently before making any completion or termination claim.
+
+### Latest signal audit report
+- [TouchScale 100-episode raw tactile signal audit v2](touchscale_signal_audit_100_v2_report_20261125.md)
+- Official dataset card: https://huggingface.co/datasets/2077AIDataFoundation/TouchScale
+
+### Next decision gate
+1. Complete the 300-episode audit.
+2. Identify rate/contact outliers and validate timestamp-aware resampling.
+3. Compare spatial-structure repeatability across scene, participant, task and contact strata.
+4. Only then freeze an interaction-structure prediction target and actor-/task-disjoint Support/Query protocol.
+5. Run baseline models before Reptile/ANIL; no claim of meta-learning benefit without a fair ordinary-fine-tuning comparison.
