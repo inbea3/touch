@@ -121,6 +121,15 @@ def audit_hand(g, hand, epmeta):
         "split_half_structure":s
     }
 
+def json_default(value):
+    if isinstance(value, (bytes, bytearray)):
+        return value.decode("utf-8", errors="replace")
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    return str(value)
+
 def main():
     token=os.environ.get("HF_TOKEN")
     if not token: raise RuntimeError("HF_TOKEN secret missing")
@@ -186,7 +195,7 @@ def main():
                         "longest_active_segment_3N":v["threshold_sensitivity"]["3"]["longest_segment_frames"],
                         "split_half_edge_corr":v["split_half_structure"].get("split_half_edge_corr")
                     })
-    (OUT/"detail.json").write_text(json.dumps(detail,indent=2),encoding="utf-8")
+    (OUT/"detail.json").write_text(json.dumps(detail,indent=2,default=json_default),encoding="utf-8")
     pd.DataFrame(flat).to_csv(OUT/"hand_summary.csv",index=False)
     (OUT/"shard_sha256.json").write_text(json.dumps(hashes,indent=2),encoding="utf-8")
     print(json.dumps({"requested":len(selected),"h5_found":sum(v.get("status")=="ok" for v in detail.values()),
