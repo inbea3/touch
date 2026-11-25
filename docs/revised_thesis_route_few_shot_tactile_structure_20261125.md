@@ -170,6 +170,14 @@ These are candidate contributions, not pre-asserted discoveries. Do not claim no
 8. Perform object-level confirmatory evaluation and statistical synthesis.
 9. Write the thesis with claims limited to observed evidence.
 
+
+### TouchScale public-card pre-audit (2026-11-25)
+- Public dataset card confirms 15,324 episodes, 929 tasks, 22 scenes, 24 participants, 880 taxels per hand, and 35–90 Hz tactile sampling. The currently hosted release is 100 hours; the remaining 400 hours must not be assumed available.
+- Episode metadata includes free-text `items`, task/scene/instruction, actor, primary hand, duration, tactile contact fractions and shard. The object mesh table contains 193 reconstructed objects and does not provide a complete canonical identity map for all episode item labels; the card explicitly notes that mesh object names do not always match episode `items`.
+- Episodes may involve multiple objects; naive item-label counts are not valid object-task counts. The audit must retain raw labels and manually review ambiguous mappings.
+- Metadata/geometry files are behind the dataset access gate. No row-level parquet or geometry inspection has yet occurred. The researcher must accept the dataset terms and provide a read-only Hugging Face token via the repository secret `HF_TOKEN`; never paste the token into chat or commit it.
+- Added `scripts/audit_touchscale_metadata.py`, `requirements-touchscale-audit.txt`, and manual workflow `.github/workflows/touchscale-metadata-audit.yml`. The workflow downloads metadata and geometry only, not raw episode shards.
+
 ## 11. Current status (2026-11-25)
 
 - Research direction selected by the researcher: adapt to unseen objects; target spatial co-activation structure; audit TouchScale first; first experiment priority is whether few-shot adaptation improves structure prediction.
