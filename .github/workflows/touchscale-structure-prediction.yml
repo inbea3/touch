@@ -1,0 +1,40 @@
+name: TouchScale early-to-late pad structure feasibility audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - thesis-few-shot-structure-20261125
+    paths:
+      - scripts/audit_touchscale_structure_prediction.py
+      - scripts/audit_touchscale_signal_300.py
+      - configs/touchscale_signal_audit_300_shards.txt
+      - .github/workflows/touchscale-structure-prediction.yml
+
+permissions:
+  contents: read
+
+jobs:
+  structure-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: thesis-few-shot-structure-20261125
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install numpy pandas pyarrow h5py huggingface_hub
+      - name: Audit early-to-late pad-level structure on fixed deterministic 300 sample
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/audit_touchscale_structure_prediction.py
+      - name: Upload structure feasibility results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchscale-early-late-structure-audit
+          path: artifacts/touchscale_structure_prediction/
+          if-no-files-found: warn
