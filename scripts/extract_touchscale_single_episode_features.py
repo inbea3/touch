@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Extract the established 10-bin tactile structure representation for one real episode."""
+"""Extract the established 10-bin tactile structure representation for one real episode.
+Pilot scope: exactly one metadata-selected episode; no bulk shard download."""
 from __future__ import annotations
 import io, json, os, tarfile, time
 from pathlib import Path
