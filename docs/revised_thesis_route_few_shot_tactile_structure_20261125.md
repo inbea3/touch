@@ -178,6 +178,18 @@ These are candidate contributions, not pre-asserted discoveries. Do not claim no
 - Metadata/geometry files are behind the dataset access gate. No row-level parquet or geometry inspection has yet occurred. The researcher must accept the dataset terms and provide a read-only Hugging Face token via the repository secret `HF_TOKEN`; never paste the token into chat or commit it.
 - Added `scripts/audit_touchscale_metadata.py`, `requirements-touchscale-audit.txt`, and manual workflow `.github/workflows/touchscale-metadata-audit.yml`. The workflow downloads metadata and geometry only, not raw episode shards.
 
+
+### TouchScale metadata/geometry audit completed (2026-11-25)
+- Workflow run 45588023843 succeeded; metadata-only artifact was downloaded and inspected.
+- 15,324 episode rows and unique episode IDs; 953 task IDs; 24 actors; 22 scenes; 880 distinct individual item labels; 821 exact item bundles.
+- 4,045 episodes (26.4%) have empty item arrays; 11,148 (72.7%) contain multiple item labels. `items` lists all objects involved, often including props/tools/surfaces, and is not a canonical primary-object ID.
+- Only 66 of the 193 mesh object names match an episode item label under normalized exact-name matching. The mesh registry is partial.
+- Both hand geometries decoded: 880 taxels, 15 regions each, 9 values per taxel (XYZ plus two local direction vectors), all XYZ finite, no duplicate XYZ rows. Official geometry note specifies a flat palmar layout and region/row-major order.
+- Median episode duration 21.87 s. Median contact fractions: left 0.2978, right 0.3302. Sampling rates vary; use timestamps.
+- Decision: metadata and geometry gates pass; object-identity/primary-manipuland and independent Support/Query gates remain open. Do not infer K-shot eligibility from raw item-label frequencies. Do not start TouchScale model training yet.
+- Next: stratified manual review of ~200 episodes to identify primary manipulated object, support props, repeated labels, task/actor/date overlap, and valid single-hand contact intervals.
+- Full report: [docs/touchscale_metadata_geometry_audit_20261125.md](touchscale_metadata_geometry_audit_20261125.md).
+
 ## 11. Current status (2026-11-25)
 
 - Research direction selected by the researcher: adapt to unseen objects; target spatial co-activation structure; audit TouchScale first; first experiment priority is whether few-shot adaptation improves structure prediction.
