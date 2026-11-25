@@ -211,6 +211,16 @@ These are candidate contributions, not pre-asserted discoveries. Do not claim no
 - Next gate: obtain independent review/adjudication of the 30-row blind sample (and then review the full 100 if the codebook changes), finalize target identity unit, and only then compute eligible few-shot tasks.
 - Desk coding report: [TouchScale 100-episode desk coding v1](touchscale_100_episode_desk_coding_v1_20261125.md).
 
+
+### Full TouchScale task-intent classification (2026-11-25)
+- Classified all 15,324 episode metadata rows into seven broad task-intent families across 920 scene/task templates. The 37 residual templates were manually assigned to a broad family after inspection; this is still task-intent coding, not human-verified object annotation.
+- Family counts: transfer/pouring/dispensing 3,547 episodes/205 templates; insertion/assembly/component operation 2,973/155; scene setup/organization/reset 2,425/187; material processing/deformation 2,180/113; single-object grasp/transport/pose manipulation 1,495/95; surface/tool cleaning 1,358/86; inspection/trial/comparison 1,346/79.
+- `task_id` is not globally unique; use scene + task_name for task-template audit.
+- Of 920 templates, 862 have only one actor, 56 have two actors, and 2 have three actors. Thus only 58 templates have >=2 actors, 2 have >=3 actors, and none have >=6 actors. Median episode count is 18, but these are mostly repeated within-actor episodes and are not independent shots.
+- Decision: no-go for claiming current TouchScale metadata supports participant-independent few-shot adaptation to unseen physical objects. Continue with interaction-structure task audit; distinguish within-actor episode adaptation from actor-disjoint generalization. Do not silently relabel task adaptation as unseen-object adaptation.
+- Next: inspect a stratified raw-signal sample, define interaction-tuple targets (manipulated entity, counterpart/source/destination, tool, contact surface, task phase), and quantify actor-disjoint eligible tasks before training.
+- Full report: [TouchScale full task-intent classification](touchscale_full_task_intent_classification_20261125.md).
+
 ## 11. Current status (2026-11-25)
 
 - Research direction selected by the researcher: adapt to unseen objects; target spatial co-activation structure; audit TouchScale first; first experiment priority is whether few-shot adaptation improves structure prediction.
