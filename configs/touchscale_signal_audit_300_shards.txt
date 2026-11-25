@@ -1,0 +1,15 @@
+data/train-00140-of-00430.tar
+data/train-00151-of-00430.tar
+data/train-00004-of-00430.tar
+data/train-00254-of-00430.tar
+data/train-00032-of-00430.tar
+data/train-00301-of-00430.tar
+data/train-00163-of-00430.tar
+data/train-00339-of-00430.tar
+data/train-00424-of-00430.tar
+data/train-00209-of-00430.tar
+data/train-00066-of-00430.tar
+data/train-00243-of-00430.tar
+data/train-00138-of-00430.tar
+data/train-00121-of-00430.tar
+data/train-00083-of-00430.tar
