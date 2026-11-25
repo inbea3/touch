@@ -137,15 +137,17 @@ def main() -> None:
                 "collection_date": row["collection_date"],
                 "item_label": item,
                 "item_label_norm": key,
-                "exact_object_catalogue_match": key in object_name_to_id,
-                "candidate_object_id": object_name_to_id.get(key)
+                "exact_object_catalogue_match": key in object_name_to_ids,
+                "candidate_object_ids": ";".join(object_name_to_ids.get(key, [])),
+                "candidate_object_match_count": len(object_name_to_ids.get(key, []))
             })
     item_mentions = pd.DataFrame(mentions)
     if item_mentions.empty:
         item_mentions = pd.DataFrame(columns=[
             "episode_id", "task_id", "task_name", "scene", "actor_id",
             "collection_date", "item_label", "item_label_norm",
-            "exact_object_catalogue_match", "candidate_object_id"
+            "exact_object_catalogue_match", "candidate_object_ids",
+            "candidate_object_match_count"
         ])
 
     episode_export = episodes.copy()
