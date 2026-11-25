@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Small TouchScale tactile-signal feasibility audit. One shard, seven selected episodes; no video extraction."""
+"""Small TouchScale tactile-signal feasibility audit. One shard, seven selected episodes; no video extraction. Pilot only; no model fitting."""
 from __future__ import annotations
 import io, json, os, tarfile, hashlib
 from pathlib import Path
