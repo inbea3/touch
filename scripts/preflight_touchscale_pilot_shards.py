@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Preflight TouchScale pilot extraction: verify selected episodes and shard download footprint."""
+"""Preflight TouchScale pilot extraction: verify selected episodes and shard download footprint.
+This preflight runs before any multi-shard raw tactile download."""
 from __future__ import annotations
 import json, os, shutil
 from pathlib import Path
