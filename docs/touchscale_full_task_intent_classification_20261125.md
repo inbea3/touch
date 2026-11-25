@@ -1,74 +1,75 @@
-# TouchScale Full Task-Intent Classification — 2026-11-25
+# TouchScale Full Task-Intent Classification — Corrected V1 (2026-11-25)
 
 ## Scope and source
+- Source: successful metadata-only audit artifact, `episode_metadata_review.csv`.
+- Classified all 15,324 episode rows and 920 distinct task-name templates.
+- Classification unit: scene + task_name. Numeric `task_id` values collide across different task names in the inspected export; do not use task_id alone as the grouping key.
+- Method: rule-assisted coding from task title and full instruction; 37 residual templates were manually assigned to broad interaction families after direct inspection. The earlier false-positive rule that treated the noun phrase “test tube” as an inspection action was corrected.
+- This is task-intent classification, not human-verified object annotation or canonical object-instance identification.
 
-- Source: `metadata/episode_metadata_review.csv` from successful metadata-only audit artifact.
-- Records classified: 15,324 episodes.
-- Classification unit: 920 distinct `task_name` templates (with scene retained).
-- Method: deterministic/model-assisted rule coding from `task_name` and full `instruction`; 37 residual templates were manually assigned to a broad interaction family after inspecting their titles and instructions.
-- No raw tactile shards were downloaded for this task-intent pass.
+## 1. Corrected family counts
 
-## 1. Task-family counts
-
-| Family | Episodes | Distinct task templates |
+| Family | Episodes | Task templates |
 |---|---:|---:|
-| Transfer / pouring / dispensing | 3,547 | 205 |
-| Insertion / assembly / component operation | 2,973 | 155 |
+| Transfer / pouring / dispensing | 4,127 | 235 |
+| Insertion / assembly / component operation | 3,276 | 172 |
 | Scene setup / organization / reset | 2,425 | 187 |
 | Material processing / deformation | 2,180 | 113 |
-| Single-object grasp / transport / pose manipulation | 1,495 | 95 |
-| Surface / tool cleaning | 1,358 | 86 |
-| Inspection / trial / comparison | 1,346 | 79 |
+| Single-object grasp / transport / pose manipulation | 1,683 | 109 |
+| Surface / tool cleaning | 1,429 | 89 |
+| Inspection / trial / comparison | 204 | 15 |
 | **Total** | **15,324** | **920** |
 
-This classification is task-intent, not object identity. It should not be described as human-verified annotation or ground truth.
-
-## 2. Correct experimental unit warning
-
-The metadata's `task_id` is not globally unique: one numeric task_id maps to multiple task names. Group by `scene + task_name` for this task-template audit.
+## 2. Task repetition is not independent few-shot support
 
 Across 920 scene/task templates:
-- Median episodes per template: 18.
+- Median episode count per template: 18.
 - 821 templates have at least 2 episodes; 807 have at least 3; 791 have at least 6.
-- But 862/920 templates have episodes from only one actor; 56 have two actors; only 2 have three actors.
-- Thus only 58 templates have at least 2 distinct actors; only 2 have at least 3 distinct actors; none have at least 6 distinct actors.
+- Actor distribution: 862 templates have 1 actor, 56 have 2 actors, and 2 have 3 actors.
+- Thus only 58 templates have at least 2 distinct actors, 2 have at least 3 distinct actors, and none have at least 6 distinct actors.
 
-Episode count is not equivalent to independent few-shot count. Repeated trials within a single actor/task are correlated and must not be split naively between Support and Query. These data do not support a general participant-independent 5-shot claim at the task-template level.
+Repeated episodes for the same actor and task may be correlated. The large episode counts do not justify treating the repeated recordings as independent support/query shots. A participant-independent 5-shot task-template evaluation is not supported by this release metadata.
 
-## 3. Primary-object decision
+## 3. Correct experimental unit
 
-The task descriptions often specify a relation, not a single object:
-- Transfer tasks require source, destination/container, and transferred material.
-- Assembly tasks require component, parent object, and mating part.
-- Cleaning tasks require tool and contacted surface.
-- Scene setup tasks involve several objects and spatial arrangement.
-- Inspection tasks require a tested object and the tool/procedure.
-- Material processing tasks involve material/object plus tool or support surface.
+Most TouchScale tasks are relational:
+- Transfer: source + destination/container + transferred material.
+- Assembly: component + parent object + mating part.
+- Cleaning: tool + contacted surface.
+- Setup: multiple objects + spatial arrangement.
+- Inspection: tested object + tool/procedure.
+- Material processing: material/object + tool or support surface.
 
-Therefore the correct annotation unit is initially an **interaction tuple**, not a single free-text object label:
+The initial target representation should therefore be an **interaction tuple**, not a single object label:
 `(primary manipulated entity, counterpart/source/destination, tool, contact surface, task phase)`.
 
-Do not infer physical instance identity from a repeated noun or task template. The metadata does not provide a canonical physical object-instance ID for every episode.
+The metadata does not provide a canonical physical object-instance ID for every episode. Repeated nouns or task templates cannot be treated as proof of the same physical instance.
 
-## 4. Research route decision
+## 4. Research decision
 
-**NO-GO for claiming TouchScale currently validates few-shot adaptation to unseen physical objects.**
+- **NO-GO:** claim that the current metadata establishes few-shot adaptation to unseen physical objects.
+- **GO:** continue auditing tactile interaction-structure adaptation.
+- Keep within-actor repeated-episode adaptation separate from actor-disjoint generalization.
+- Do not silently rename task adaptation as unseen-object adaptation.
+- Do not start model training until the interaction target and leakage-safe split are fixed.
 
-**GO for continuing a task/interaction-structure audit.** The next defensible candidate is few-shot adaptation of tactile interaction structure across repeated task templates or interaction families, but the actor concentration is a major limitation. A participant-held-out or actor-disjoint Support/Query evaluation is feasible only for the small subset with sufficient distinct actors; the number of eligible tasks must be stated.
+## 5. Next signal-level feasibility pilot
 
-The thesis can retain the broad research question of adapting tactile structure, but must not silently relabel task adaptation as unseen-object adaptation. The estimand needs a formal decision after signal-level feasibility checks.
+A single shard `data/train-00174-of-00430.tar` was selected because it contains all seven task families, 12 actors, and a median episode quality score of 0.5826. Seven high-quality episodes with nontrivial tactile contact were selected, one per family.
 
-## 5. Immediate next actions
+The dataset card reports WebDataset shards of approximately 2.5 GB each. The pilot downloads only this one shard, extracts only the selected episodes' left/right tactile NPZ files and episode HDF5 metadata, and does not extract or retain video files. The artifact contains aggregate signal diagnostics only.
 
-1. Inspect raw tactile arrays for a small stratified set of task families to verify timestamps, contact windows, usable force channels, and target construction.
-2. Build an interaction-tuple annotation protocol for a small sample, including ambiguous multi-object tasks.
-3. Quantify actor-disjoint eligible task counts and report the small eligible subset transparently.
-4. Compare within-actor episode adaptation only as a separate, weaker setting; do not mix it with actor-disjoint generalization.
-5. Freeze the target and Support/Query protocol before model training.
+The pilot checks:
+- per-hand timestamp monotonicity and sampling rate;
+- tactile pad count, taxel count and array shapes;
+- finite values and force distribution;
+- force-threshold contact fractions versus metadata;
+- active contact segments;
+- preliminary split-half stability of sensor-pair correlations, only when enough active frames and variable taxels exist.
 
-## 6. Deliverables generated
+This is a feasibility diagnostic, not model training and not a final estimator validation.
 
-- `touchscale_task_catalog_920_v1.xlsx`: all 920 task templates, family, interaction scope, episode/actor/date counts, and example instruction.
-- `touchscale_all_15324_task_classification_v1.csv`: all 15,324 episodes with task-family labels and source metadata fields.
-
-These local artifacts are delivered in the current conversation; the repository report documents their derivation and limitations.
+## 6. Deliverables
+- `touchscale_task_catalog_920_v1.xlsx`: 920 templates with family, interaction scope, episode/actor/date counts and example instruction.
+- `touchscale_all_15324_task_classification_v1.csv`: all 15,324 episode rows with family labels.
+- `scripts/audit_touchscale_signal_pilot.py` and `.github/workflows/touchscale-signal-pilot.yml`: selected raw tactile signal pilot.
