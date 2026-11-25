@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Metadata-only TouchScale audit. Never downloads raw tactile/video shards."""
 from __future__ import annotations
-import argparse, hashlib, json, os, shutil
+import argparse, base64, hashlib, json, os, shutil
 from pathlib import Path
+import numpy as np
 import pandas as pd
 from huggingface_hub import hf_hub_download
 
@@ -14,23 +15,53 @@ FILES = {
     "right_geometry": "metadata/glove_geometry_right.json",
 }
 
-def sha256(path: Path) -> str:
+def sha256(path):
     h=hashlib.sha256()
-    with path.open("rb") as f:
+    with Path(path).open("rb") as f:
         for b in iter(lambda:f.read(1024*1024),b""): h.update(b)
     return h.hexdigest()
 
-def geometry_summary(obj):
-    regions=obj.get("regions",[]) if isinstance(obj,dict) else []
-    return {
-        "top_level_keys": list(obj.keys()) if isinstance(obj,dict) else [],
-        "region_count": len(regions),
-        "regions": [
-            {k:v for k,v in r.items() if k not in ("taxels","coordinates","positions")}
-            for r in regions if isinstance(r,dict)
-        ],
-        "columns": obj.get("columns") if isinstance(obj,dict) else None,
+def item_list(value):
+    if value is None or (isinstance(value,float) and pd.isna(value)): return []
+    if isinstance(value,np.ndarray): value=value.tolist()
+    if isinstance(value,(list,tuple,set)): return [str(x).strip() for x in value if str(x).strip()]
+    # Do not guess-split stringified arrays. Preserve as one unresolved value.
+    s=str(value).strip()
+    return [s] if s else []
+
+def geometry_audit(path,out,side):
+    obj=json.loads(Path(path).read_text())
+    raw=base64.b64decode(obj["data_base64"])
+    arr=np.frombuffer(raw,dtype=np.dtype(obj["dtype"]))
+    n=int(obj["point_count"]); stride=int(obj["point_stride"])
+    if arr.size != n*stride: raise ValueError(f"{side}: geometry payload size mismatch")
+    mat=arr.reshape(n,stride)
+    cols=obj["columns"]
+    ix,iy,iz=[cols.index(c) for c in ("x","y","z")]
+    xyz=mat[:,[ix,iy,iz]]
+    regions=obj["regions"]
+    region_rows=[]
+    start=0
+    for r in regions:
+        count=int(r["rows"])*int(r["cols"])
+        region_rows.append({"region_id":r["id"],"region":r["name"],"rows":r["rows"],"cols":r["cols"],"taxel_count":count,"start_index":start,"end_index_exclusive":start+count})
+        start+=count
+    if start!=n: raise ValueError(f"{side}: region taxel total {start} != point_count {n}")
+    region_df=pd.DataFrame(region_rows)
+    region_df.to_csv(out/f"{side}_geometry_regions.csv",index=False)
+    geom={
+        "schema":obj.get("schema"),"side":obj.get("side"),"point_count":n,"point_stride":stride,
+        "columns":cols,"region_count":len(regions),"region_taxel_total":start,
+        "xyz_finite":bool(np.isfinite(xyz).all()),
+        "xyz_duplicate_rows":int(pd.DataFrame(xyz).duplicated().sum()),
+        "xyz_min":xyz.min(axis=0).tolist(),"xyz_max":xyz.max(axis=0).tolist(),
+        "xyz_std":xyz.std(axis=0).tolist(),
+        "regions":region_rows,
+        "note":obj.get("note")
     }
+    # Preserve the official file for reproducibility.
+    shutil.copy2(path,out/f"{side}_geometry.json")
+    return geom
 
 def main():
     ap=argparse.ArgumentParser()
@@ -47,62 +78,74 @@ def main():
     missing=[c for c in required if c not in ep.columns]
     if missing: raise RuntimeError(f"episodes.parquet missing fields: {missing}")
 
-    # IMPORTANT: items is free text describing objects involved, often concatenated
-    # without a reliable delimiter. Preserve it as an opaque episode-level bundle.
-    ep["items_raw"]=ep["items"].fillna("").astype(str).str.strip()
-    ep["items_bundle_norm"]=ep["items_raw"].str.lower().str.replace(r"\\s+"," ",regex=True)
-    bundle=ep[ep["items_bundle_norm"]!=""].groupby("items_bundle_norm",dropna=False).agg(
-        episode_count=("episode_id","nunique"),
-        unique_actors=("actor_id","nunique"),
-        unique_tasks=("task_id","nunique"),
-        unique_scenes=("scene","nunique"),
-        unique_dates=("collection_date","nunique"),
-        unique_shards=("shard","nunique"),
-        median_quality=("quality_score","median"),
-        raw_label_examples=("items_raw",lambda x:" || ".join(list(dict.fromkeys(x.astype(str)))[:3])),
-        task_examples=("task_name",lambda x:" || ".join(list(dict.fromkeys(x.astype(str)))[:3])),
-        instruction_examples=("instruction",lambda x:" || ".join(list(dict.fromkeys(x.astype(str)))[:2])),
-    ).reset_index().sort_values("episode_count",ascending=False)
+    ep["item_list"]=ep["items"].map(item_list)
+    ep["n_items"]=ep["item_list"].map(len)
+    ep["items_json"]=ep["item_list"].map(lambda x:json.dumps(x,ensure_ascii=False))
+    ep["items_bundle_norm"]=ep["item_list"].map(lambda x="": " | ".join(y.lower().strip() for y in x))
+    # Individual raw item mentions; these are object labels, not guaranteed unique physical instances.
+    rows=[]
+    all_items=sorted({item for xs in ep["item_list"] for item in xs})
+    for item in all_items:
+        sub=ep[ep["item_list"].map(lambda xs:item in xs)]
+        rows.append({
+            "raw_item_label":item,"episode_count":int(sub["episode_id"].nunique()),
+            "unique_actors":int(sub["actor_id"].nunique()),
+            "unique_tasks":int(sub["task_id"].nunique()),
+            "unique_scenes":int(sub["scene"].nunique()),
+            "unique_dates":int(sub["collection_date"].nunique()),
+            "unique_shards":int(sub["shard"].nunique()),
+            "median_quality":float(sub["quality_score"].median()),
+            "task_examples":" || ".join(list(dict.fromkeys(sub["task_name"].astype(str)))[:5]),
+        })
+    item_df=pd.DataFrame(rows).sort_values("episode_count",ascending=False)
+    item_df.to_csv(out/"individual_item_label_counts.csv",index=False)
+
+    # Exact full item bundles are useful for review but are not object identities.
+    bundle=(ep[ep["n_items"]>0].groupby("items_bundle_norm")
+        .agg(episode_count=("episode_id","nunique"),unique_actors=("actor_id","nunique"),
+             unique_tasks=("task_id","nunique"),unique_scenes=("scene","nunique"),
+             raw_examples=("items_json",lambda x:" || ".join(list(dict.fromkeys(x.astype(str)))[:2])))
+        .reset_index().sort_values("episode_count",ascending=False))
     bundle.to_csv(out/"episode_item_bundle_counts.csv",index=False)
 
-    # Export episode metadata for manual object-identity review; no tactile arrays/video.
-    review_cols=[c for c in required if c in ep.columns]
+    review_cols=required+["items_json","n_items"]
     ep[review_cols].to_csv(out/"episode_metadata_review.csv",index=False)
     objects.to_csv(out/"mesh_object_registry.csv",index=False)
 
-    geometries={}
-    for side in ("left_geometry","right_geometry"):
-        obj=json.loads(files[side].read_text())
-        geometries[side]=geometry_summary(obj)
-        shutil.copy2(files[side],out/(side+".json"))
-
-    unique_ids=int(ep["episode_id"].nunique(dropna=True))
+    geom={side:geometry_audit(files[f"{side}_geometry"],out,side) for side in ("left","right")}
+    eligibility={}
+    for k in (1,2,5,10):
+        eligible=item_df[item_df["episode_count"]>=k+1]
+        eligibility[str(k)]={
+            "raw_item_labels_with_at_least_k_plus_1_episodes":int(len(eligible)),
+            "not_confirmed_independent_object_instances":True
+        }
     summary={
         "dataset":REPO_ID,"revision":args.revision,
-        "episode_rows":int(len(ep)),"unique_episode_ids":unique_ids,
+        "episode_rows":int(len(ep)),"unique_episode_ids":int(ep["episode_id"].nunique()),
         "duplicate_episode_id_rows":int(ep["episode_id"].duplicated().sum()),
-        "unique_task_ids":int(ep["task_id"].nunique(dropna=True)),
-        "unique_actor_ids":int(ep["actor_id"].nunique(dropna=True)),
-        "unique_scenes":int(ep["scene"].nunique(dropna=True)),
-        "unique_exact_item_bundles":int(ep.loc[ep["items_bundle_norm"]!="","items_bundle_norm"].nunique()),
-        "episodes_missing_items":int((ep["items_bundle_norm"]=="").sum()),
-        "episodes_with_repeated_item_bundle":int((ep["items_bundle_norm"].value_counts()>1).sum()),
-        "bundle_episode_count_quantiles":bundle["episode_count"].quantile([0,.25,.5,.75,1]).to_dict() if len(bundle) else {},
+        "unique_task_ids":int(ep["task_id"].nunique()),"unique_actor_ids":int(ep["actor_id"].nunique()),
+        "unique_scenes":int(ep["scene"].nunique()),
+        "episodes_missing_item_labels":int((ep["n_items"]==0).sum()),
+        "episodes_with_multiple_item_labels":int((ep["n_items"]>1).sum()),
+        "unique_individual_item_labels":int(len(item_df)),
+        "unique_exact_item_bundles":int(len(bundle)),
+        "raw_item_label_episode_count_quantiles":item_df["episode_count"].quantile([0,.25,.5,.75,1]).to_dict() if len(item_df) else {},
+        "raw_item_label_naive_k_eligibility":eligibility,
         "episode_duration_s_quantiles":ep["duration_s"].quantile([0,.25,.5,.75,1]).to_dict(),
-        "tactile_sampling_rate_counts":ep["glove_rate_hz"].round(1).value_counts(dropna=False).to_dict(),
+        "tactile_sampling_rate_rounded_hz_counts":ep["glove_rate_hz"].round(1).value_counts(dropna=False).to_dict(),
         "left_contact_fraction_quantiles":ep["tactile_contact_frac_left"].quantile([0,.25,.5,.75,1]).to_dict(),
         "right_contact_fraction_quantiles":ep["tactile_contact_frac_right"].quantile([0,.25,.5,.75,1]).to_dict(),
         "quality_score_quantiles":ep["quality_score"].quantile([0,.25,.5,.75,1]).to_dict(),
-        "objects_mesh_registry_rows":int(len(objects)),
-        "objects_mesh_registry_columns":list(objects.columns),
-        "episode_columns":list(ep.columns.drop(["items_raw","items_bundle_norm"])),
-        "geometry":geometries,
+        "objects_mesh_registry_rows":int(len(objects)),"objects_mesh_registry_columns":list(objects.columns),
+        "geometry":geom,
         "metadata_file_integrity":{k:{"bytes":v.stat().st_size,"sha256":sha256(v)} for k,v in files.items()},
         "warnings":[
-            "The items field is free-text episode-level object involvement, not a canonical object-ID list.",
-            "Repeated exact item bundles are NOT proof that the same individual object instance or object category recurs.",
-            "The 193-row mesh registry is partial and object_name does not always match episode items.",
-            "No 1/2/5/10-shot object eligibility is reported: this requires a validated object identity map and independent episode review.",
+            "Raw item labels are involved-object names from episodes, not unique physical object-instance IDs.",
+            "The same item label can refer to different instances; item co-occurrence bundles may contain props, containers, tools and target objects.",
+            "Naive K eligibility counts are only label-frequency screens, not validated few-shot object tasks.",
+            "The 193-row mesh registry is partial; object_name does not always match episode items.",
+            "Episode-level repeated observations may share participant, task, scene, date or recording context; audit before Support/Query splitting.",
             "No raw tactile shards or video files were downloaded."
         ]
     }
