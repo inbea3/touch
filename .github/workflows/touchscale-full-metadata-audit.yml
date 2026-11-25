@@ -1,0 +1,38 @@
+name: TouchScale full metadata identity audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - thesis-few-shot-structure-20261125
+    paths:
+      - scripts/audit_touchscale_full_metadata_identity.py
+      - .github/workflows/touchscale-full-metadata-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  metadata-identity-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: thesis-few-shot-structure-20261125
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install metadata audit dependencies
+        run: python -m pip install --upgrade pandas pyarrow huggingface_hub
+      - name: Audit complete episode and object metadata
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/audit_touchscale_full_metadata_identity.py
+      - name: Upload metadata-only audit outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchscale-full-metadata-identity-audit
+          path: artifacts/touchscale_full_metadata_identity/
+          if-no-files-found: warn
