@@ -133,9 +133,13 @@ def choose_sample(meta,shards):
     selected=[]; actor_counts=defaultdict(int); task_counts=defaultdict(int); date_counts=defaultdict(int)
     for scene,quota in quotas.items():
         pool=df[df.scene==scene].copy()
-        pool["contact_bin"]=pd.qcut(pool["contact_avg"].rank(method="first"),3,labels=["low","mid","high"])
-        bin_q=[quota//3]*3
-        for i in range(quota%3): bin_q[i]+=1
+        if len(pool)>=3:
+            pool["contact_bin"]=pd.qcut(pool["contact_avg"].rank(method="first"),3,labels=["low","mid","high"])
+            bin_q=[quota//3]*3
+            for i in range(quota%3): bin_q[i]+=1
+        else:
+            pool["contact_bin"]="mid"
+            bin_q=[0,quota,0]
         for b,q in zip(["low","mid","high"],bin_q):
             bp=pool[pool.contact_bin==b].copy()
             for _ in range(q):
@@ -182,7 +186,12 @@ def main():
         local=hf_hub_download(repo_id=REPO,filename=shard,repo_type="dataset",token=token,cache_dir=str(cache))
         hashes[shard]=sha256(local)
         with tarfile.open(local,"r:*") as tar:
-            members={Path(m.name).name:m for m in tar if m.isfile()}
+            wanted_names={row["episode_id"]+suffix for row in rows for suffix in (".episode.h5",".json")}
+            members={}
+            for member in tar:
+                base=Path(member.name).name
+                if member.isfile() and base in wanted_names:
+                    members[base]=member
             for row in rows:
                 eid=row["episode_id"]; hm=members.get(eid+".episode.h5"); jm=members.get(eid+".json")
                 if hm is None:
