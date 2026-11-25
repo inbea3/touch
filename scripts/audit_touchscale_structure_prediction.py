@@ -59,12 +59,9 @@ def summarize_hand(g):
     n=max(20,int(T*.30))
     early=P[:n]
     late=P[T-n:]
-    ev=corr_vec(early); lv=corr_vec(late)
-    if ev is None or lv is None or len(ev)!=len(lv):
-        return {"status":"insufficient_structure_variation","frames":T}
-    # The same upper-triangle coordinate order is guaranteed by fixed pad ordering,
-    # provided all pads pass the variance filter. Store dimensions to detect mismatch.
-    # Recompute with a common active-pad mask to make edge vectors comparable.
+    # Use one shared pad mask across early and late windows. Do not independently
+    # filter pads in each window: differing variable-pad counts are not a reason
+    # to discard an otherwise valid recording.
     Z=np.log1p(P)
     common=(Z[:n].std(axis=0)>EPS)&(Z[T-n:].std(axis=0)>EPS)
     if common.sum()<4:
