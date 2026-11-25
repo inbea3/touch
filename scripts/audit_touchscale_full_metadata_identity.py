@@ -116,7 +116,12 @@ def main() -> None:
     if object_missing:
         raise RuntimeError(f"objects.parquet missing expected fields: {object_missing}")
     objects["object_name_norm"] = objects["object_name"].map(norm)
-    object_name_to_ids = (\n        objects.assign(object_id_text=objects["object_id"].astype(str))\n        .groupby("object_name_norm")["object_id_text"]\n        .apply(lambda values: sorted(set(values)))\n        .to_dict()\n    )
+    object_name_to_ids = (
+        objects.assign(object_id_text=objects["object_id"].astype(str))
+        .groupby("object_name_norm")["object_id_text"]
+        .apply(lambda values: sorted(set(values)))
+        .to_dict()
+    )
 
     mentions = []
     for row in episodes[["episode_id", "task_id_text", "task_name", "scene",
