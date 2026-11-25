@@ -1,0 +1,39 @@
+name: TouchScale 300-episode stratified raw signal audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - thesis-few-shot-structure-20261125
+    paths:
+      - scripts/audit_touchscale_signal_300.py
+      - configs/touchscale_signal_audit_300_shards.txt
+      - .github/workflows/touchscale-signal-300.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit-300:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: thesis-few-shot-structure-20261125
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install numpy pandas pyarrow h5py huggingface_hub
+      - name: Download metadata and audit 300 stratified episodes
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/audit_touchscale_signal_300.py
+      - name: Upload 300-episode audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchscale-signal-audit-300
+          path: artifacts/touchscale_signal_300/
+          if-no-files-found: warn
