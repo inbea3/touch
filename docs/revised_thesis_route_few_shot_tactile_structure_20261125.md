@@ -172,10 +172,10 @@ These are candidate contributions, not pre-asserted discoveries. Do not claim no
 
 
 ### TouchScale public-card pre-audit (2026-11-25)
-- Public dataset card confirms 15,324 episodes, 929 tasks, 22 scenes, 24 participants, 880 taxels per hand, and 35–90 Hz tactile sampling. The currently hosted release is 100 hours; the remaining 400 hours must not be assumed available.
+- Public dataset card reports 15,324 episodes, 929 tasks, 22 scenes, 24 participants, 880 taxels per hand, and 35–90 Hz tactile sampling. Row-level metadata contains 953 distinct task_id values; this discrepancy with the card's 929-task figure remains unresolved and must be reported rather than silently reconciled. The currently hosted release is 100 hours; the remaining 400 hours must not be assumed available.
 - Episode metadata includes free-text `items`, task/scene/instruction, actor, primary hand, duration, tactile contact fractions and shard. The object mesh table contains 193 reconstructed objects and does not provide a complete canonical identity map for all episode item labels; the card explicitly notes that mesh object names do not always match episode `items`.
 - Episodes may involve multiple objects; naive item-label counts are not valid object-task counts. The audit must retain raw labels and manually review ambiguous mappings.
-- Metadata/geometry files are behind the dataset access gate. No row-level parquet or geometry inspection has yet occurred. The researcher must accept the dataset terms and provide a read-only Hugging Face token via the repository secret `HF_TOKEN`; never paste the token into chat or commit it.
+- Metadata/geometry files were accessed after dataset terms acceptance and a read-only Hugging Face token was configured as repository secret HF_TOKEN; the token itself is not stored in the repository or chat.
 - Added `scripts/audit_touchscale_metadata.py`, `requirements-touchscale-audit.txt`, and manual workflow `.github/workflows/touchscale-metadata-audit.yml`. The workflow downloads metadata and geometry only, not raw episode shards.
 
 
@@ -190,11 +190,21 @@ These are candidate contributions, not pre-asserted discoveries. Do not claim no
 - Next: stratified manual review of ~200 episodes to identify primary manipulated object, support props, repeated labels, task/actor/date overlap, and valid single-hand contact intervals.
 - Full report: [docs/touchscale_metadata_geometry_audit_20261125.md](touchscale_metadata_geometry_audit_20261125.md).
 
+
+
+### TouchScale primary-object sample review (2026-11-25)
+- Inspected a 100-episode metadata sample using task names, item arrays and instructions. This is a desk review, not independent human annotation; provisional target hypotheses are not ground truth.
+- Sample composition: 73 distinct task IDs, 15 actors, 36 dates, 22 scenes; 17 empty item arrays; item-array size distribution: 6 with one label, 17 with two, 27 with three, 25 with four, and 8 with five or more.
+- Ten repeated actor-task pairs cover 22 records; 12 task IDs occur across multiple actors and 13 across multiple dates. Random episode-level splitting is therefore not acceptable without group controls.
+- Task types include clear single-object actions, component actions (zipper/cap), tool-mediated tasks, multi-object transfers/sorting, and scene setup/reset. The first item in items must not be treated as the target object.
+- Decision: no TouchScale object-level few-shot training yet. First define the annotation codebook, annotate the 100 sample (double-annotate a subset if possible), preserve ambiguous cases, and build the repeated-target/actor/date/shard table.
+- Review workbook: touchscale_primary_object_review_100.xlsx (provided separately). Full report: docs/touchscale_primary_object_sample_review_20261125.md.
+
 ## 11. Current status (2026-11-25)
 
 - Research direction selected by the researcher: adapt to unseen objects; target spatial co-activation structure; audit TouchScale first; first experiment priority is whether few-shot adaptation improves structure prediction.
 - Literature review is exploratory; exact novelty is not established.
-- Public metadata and geometry have not yet been inspected at record level in this project execution.
+- Public metadata and geometry have been inspected at record level. The metadata/geometry gate passed.
 - No TouchScale raw data have been downloaded or trained on.
-- The audit has not passed any data-dependent gate yet.
+- Primary-object identity and independent Support/Query feasibility gates remain open; no TouchScale model training has started.
 - Current G2-R3 execution status must be checked from its live process/workflow artifacts before reporting completion or stopping it.
