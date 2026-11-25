@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Small cross-participant TouchScale feature repeatability pilot (3 episodes, one task)."""
+"""Small cross-participant TouchScale feature repeatability pilot (3 episodes, one task).
+Uses metadata-selected episodes and remote range reads; no bulk download."""
 from __future__ import annotations
 import io, json, os, tarfile, time
 from collections import defaultdict
