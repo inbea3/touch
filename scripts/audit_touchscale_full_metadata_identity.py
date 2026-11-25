@@ -22,7 +22,7 @@ OUT = Path("artifacts/touchscale_full_metadata_identity")
 def norm(value: object) -> str:
     text = str(value).strip().lower()
     text = re.sub(r"[^a-z0-9]+", " ", text)
-    return re.sub(r"\\s+", " ", text).strip()
+    return " ".join(text.split())
 
 
 def as_items(value: object) -> list[str]:
@@ -36,9 +36,9 @@ def as_items(value: object) -> list[str]:
     if not text or text.lower() in {"nan", "none", "[]"}:
         return []
     # Metadata may be serialized as a Python/NumPy-like string array.
-    quoted = re.findall(r"'((?:[^'\\\\]|\\\\.)*)'", text)
+    quoted = text.split("'")[1::2]
     if quoted:
-        return [x.replace("\\\\'", "'").strip() for x in quoted if x.strip()]
+        return [x.strip() for x in quoted if x.strip()]
     try:
         import ast
         parsed = ast.literal_eval(text)
