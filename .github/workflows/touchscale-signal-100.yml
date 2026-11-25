@@ -1,0 +1,39 @@
+name: TouchScale 100-episode tactile signal audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - thesis-few-shot-structure-20261125
+    paths:
+      - scripts/audit_touchscale_signal_100.py
+      - configs/touchscale_signal_sample_100.tsv
+      - .github/workflows/touchscale-signal-100.yml
+
+permissions:
+  contents: read
+
+jobs:
+  signal-audit-100:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: thesis-few-shot-structure-20261125
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install audit dependencies
+        run: python -m pip install numpy pandas h5py huggingface_hub
+      - name: Download six selected shards and audit 100 episodes
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/audit_touchscale_signal_100.py
+      - name: Upload 100-episode audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchscale-signal-audit-100
+          path: artifacts/touchscale_signal_100/
+          if-no-files-found: warn
