@@ -201,6 +201,16 @@ These are candidate contributions, not pre-asserted discoveries. Do not claim no
 - Review workbook: touchscale_primary_object_review_100.xlsx (provided separately). Full report: docs/touchscale_primary_object_sample_review_20261125.md.
 - Annotation rules are frozen in docs/touchscale_primary_object_annotation_codebook_v1.md; double-annotate at least 20–30 episodes before treating the labels as reliable.
 
+
+### 100-episode provisional desk coding (2026-11-25)
+- A model-assisted desk coding pass was completed from task names, instructions, and item lists. It is explicitly provisional and not human-verified ground truth.
+- Provisional target levels: 44 whole-object, 18 multi-object-set, 17 component, 13 material/substance, 8 environment/surface.
+- Provisional task scopes: 25 single-object, 24 tool-mediated, 22 component-action, 13 multi-object transfer/sort, 9 setup/reset, 7 other/underspecified.
+- Triage: 61 usable candidates for later raw-signal review, 29 requiring signal/contact review, 10 excluded from object-level pool pending task redesign. These are not K-shot eligibility counts.
+- A blinded 30-episode double-review workbook has been prepared to enable independent reviewer agreement analysis. No inter-rater agreement exists yet because independent human annotations have not been returned.
+- Next gate: obtain independent review/adjudication of the 30-row blind sample (and then review the full 100 if the codebook changes), finalize target identity unit, and only then compute eligible few-shot tasks.
+- Desk coding report: [TouchScale 100-episode desk coding v1](touchscale_100_episode_desk_coding_v1_20261125.md).
+
 ## 11. Current status (2026-11-25)
 
 - Research direction selected by the researcher: adapt to unseen objects; target spatial co-activation structure; audit TouchScale first; first experiment priority is whether few-shot adaptation improves structure prediction.
