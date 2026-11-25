@@ -221,6 +221,13 @@ These are candidate contributions, not pre-asserted discoveries. Do not claim no
 - Next: inspect a stratified raw-signal sample, define interaction-tuple targets (manipulated entity, counterpart/source/destination, tool, contact surface, task phase), and quantify actor-disjoint eligible tasks before training.
 - Full report: [TouchScale full task-intent classification](touchscale_full_task_intent_classification_20261125.md).
 
+
+### Corrected full task-family classification (2026-11-25)
+- Re-coded all 15,324 episodes across 920 task templates, correcting false positives where “test tube” (object noun) was mistaken for a testing action.
+- Corrected counts: transfer/pouring/dispensing 4,127 episodes/235 templates; insertion/assembly/component operation 3,276/172; scene setup/organization/reset 2,425/187; material processing/deformation 2,180/113; single-object grasp/transport/pose manipulation 1,683/109; surface/tool cleaning 1,429/89; inspection/trial/comparison 204/15.
+- Task classification is still task-intent coding, not human-verified object identity. The interaction tuple is the candidate target unit.
+- A seven-episode, seven-family signal-feasibility pilot has been prepared against one shard (00174/00430); it extracts only selected tactile NPZ and HDF5 files, not video, and reports diagnostics only. It does not train a model.
+
 ## 11. Current status (2026-11-25)
 
 - Research direction selected by the researcher: adapt to unseen objects; target spatial co-activation structure; audit TouchScale first; first experiment priority is whether few-shot adaptation improves structure prediction.
