@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install range access dependencies
-        run: python -m pip install --upgrade pandas pyarrow huggingface_hub fsspec h5py
+        run: python -m pip install --upgrade pandas pyarrow huggingface_hub fsspec h5py aiohttp requests
       - name: Read one HDF5 episode from remote tar using HTTP ranges
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
