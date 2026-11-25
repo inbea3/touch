@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Prove remote HTTP-range access to one selected TouchScale tar member before bulk extraction."""
+"""Prove remote HTTP-range access to one selected TouchScale tar member before bulk extraction.
+This test avoids downloading complete multi-gigabyte tar shards."""
 from __future__ import annotations
 import io, json, os, tarfile, time
 from pathlib import Path
