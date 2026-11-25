@@ -1,0 +1,38 @@
+name: TouchScale single-episode dynamic feature extraction
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - thesis-few-shot-structure-20261125
+    paths:
+      - scripts/extract_touchscale_single_episode_features.py
+      - .github/workflows/touchscale-single-episode-features.yml
+
+permissions:
+  contents: read
+
+jobs:
+  extract-features:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: thesis-few-shot-structure-20261125
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install feature extraction dependencies
+        run: python -m pip install --upgrade numpy pandas pyarrow h5py huggingface_hub fsspec aiohttp requests
+      - name: Extract 10-bin tactile features from one episode
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/extract_touchscale_single_episode_features.py
+      - name: Upload single-episode feature tables
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchscale-single-episode-dynamic-features
+          path: artifacts/touchscale_single_episode_features/
+          if-no-files-found: warn
