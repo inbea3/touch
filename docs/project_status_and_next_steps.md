@@ -351,3 +351,15 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 结果复核报告：`docs/touchscale_cross_object_fewshot_pilot_analysis_20261126.md`。原始结果产物仍保存在 GitHub Actions Artifact；不含原始压力帧。成功运行和产物链接见该报告。
 - 结论边界：当前结果是 25 Episode/7 类别的探索性信号；不能证明普遍 Reptile 优势、参与者无关泛化、5-shot 效果或真实物理/因果结构理解。category×seed 记录并非完全独立统计样本，不将逐边数量用于显著性检验。
 - 下一步决策：先扩展/审计官方 metadata 索引，不立即下载全量压力数据；建立更大且尽量 actor-disjoint 的候选任务池；预先区分 leave-one-category-out 与 actor-disjoint 评估；随后小规模下载必要 shard，补充零方差/NaN 质量检查，再重跑 Reptile 与 Support-matched MLP。暂缓 GNN 和全量训练。
+
+
+
+## 阶段补充：完整 TouchScale metadata 的跨参与者任务可行性（2026-11-26）
+
+- 纠正上一节的待办表述：完整 metadata-only audit 实际已在 2026-11-25/26 完成，不需要重新下载或重复扫描。Full identity audit workflow `45655312000`、task-family actor coverage workflow `45760834326` 均成功；两份 Artifact 分别为 `15042611555` 与 `15088954998`。
+- 完整表包含 15,324 个唯一 Episode、920 个 task_name、953 个 task_id、22 个 scene、24 个 actor。task_id 有跨 task_name/scene 碰撞，任务模板分组必须使用 `(scene, task_name)`，不可仅用 task_id。
+- 按精确任务模板审计：862 个模板只有 1 个 actor，56 个有 2 个 actor，2 个有 3 个 actor；58 个模板跨至少 2 个 actor。50 个模板在至少 2 个 actor 中各有至少 2 条 Episode；44 个各有至少 3 条；28 个各有至少 6 条（可用于 5-shot + 至少 1 Query 的 actor-held-out 子集）。满足至少 3 个 actor、每人至少 2 条 Episode 的模板仅 1 个。
+- actor 任务覆盖明显不均衡：在每个 actor 至少 6 条且跨 actor 重复的模板中，actor_01/02/03/04 分别覆盖 22/15/14/11 个，actor_07/08 覆盖 5/6 个，actor_15/19 各 2 个。后续 LOAO 必须逐 actor 报告可评估模板数，不可把 Episode 当独立参与者样本。
+- 对象身份仍无法由 metadata 充分确立：Episode 的 `items` 是自由文本 involved-object 列表；objects mesh catalogue 不是 Episode 级物理实例 ID。不能据此声称 unseen physical-object-instance adaptation。
+- 新增可行性报告：`docs/touchscale_actor_disjoint_task_family_feasibility_20261126.md`。决策调整为：主研究目标仍为 tactile structure adaptation，但实验单位优先改为 `(scene, task_name) × actor`，论文表述采用跨参与者的已知交互任务触觉结构适应；并行保留完整任务模板留出（LOTO）评估新交互任务适应。两类结果分开报告，不再把 object-category LOCO 结果解释为 participant-independent 或 unseen-instance 泛化。
+- 下一步不是再做 metadata 下载，而是编写并测试 metadata-only split feasibility enumerator：按 LOTO/LOAO 生成 episode-level Support/Query manifest，检查 actor/task 泄漏、shot 可行性和类别/任务覆盖；之后只下载少量候选 shard 做原始信号质量审计。优先 1-shot/2-shot；5-shot 仅在可行子集报告。GNN 继续暂缓。
