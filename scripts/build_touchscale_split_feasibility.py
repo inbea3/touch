@@ -182,6 +182,7 @@ def main() -> None:
                     support, query = make_split(ids, shot, seed + shot * 1009)
                     loao_rows.append({
                         "heldout_actor": actor,
+                        "test_unit": f"{actor}::{row.task_key}",
                         "task_key": row.task_key,
                         "scene": row.scene,
                         "task_name": row.task_name,
@@ -240,7 +241,7 @@ def main() -> None:
             for k in (2, 3, 6)
         },
         "loto": shot_summary(loto, "task_key"),
-        "loao": shot_summary(loao, "heldout_actor"),
+        "loao": shot_summary(loao, "test_unit"),
         "loao_heldout_actors": sorted(loao["heldout_actor"].unique().tolist())
         if not loao.empty else [],
         "notes": [
