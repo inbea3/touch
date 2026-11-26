@@ -1,4 +1,5 @@
 name: TouchScale cross-object few-shot adaptation pilot
+# Pilot uses authoritative metadata to resolve all episode shard locations.
 
 on:
   workflow_dispatch:
