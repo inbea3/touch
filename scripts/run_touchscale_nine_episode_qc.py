@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Nine-episode TouchScale contact and sampling-rate quality audit.
+This is a bounded pilot and reads only nine selected HDF5 members.
 
 Selects three episodes per participant for one repeated task family. Extracts
 features at the current 3 N threshold and independently audits threshold
