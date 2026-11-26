@@ -58,7 +58,6 @@ EPISODES = [
  {"id":"5ef3045b-c63e-4847-8e69-64affdc03e5a","actor":"actor_01","date":"2026-08-10","label":"lever switch","shard":"data/train-00254-of-00430.tar"},
  {"id":"3e597535-8e08-4c8b-a730-a97168fbc102","actor":"actor_23","date":"2026-08-03","label":"lever switch","shard":"data/train-00016-of-00430.tar"},
  {"id":"2cb90ef0-80dd-40ef-8566-8f48db57b4dc","actor":"actor_01","date":"2026-08-21","label":"lid / latch component","shard":"data/train-00244-of-00430.tar"},
- {"id":"3b7d4145-052a-48e6-bb11-5339be5e8237","actor":"actor_02","date":"2026-08-07","label":"lid / latch component","shard":"data/train-00049-of-00430.tar"},
  {"id":"7e6e0b97-9972-44e8-ad04-470e4cc4f09e","actor":"actor_02","date":"2026-08-24","label":"lid / latch component","shard":"data/train-00334-of-00430.tar"},
  {"id":"acc872ea-1453-4f0b-a12b-9d26ac782e0b","actor":"actor_03","date":"2026-08-24","label":"lid / latch component","shard":"data/train-00304-of-00430.tar"},
  {"id":"2e415736-052a-48e6-bb11-5339be5e8237","actor":"actor_05","date":"2026-09-04","label":"lid / latch component","shard":"data/train-00376-of-00430.tar"},
@@ -70,6 +69,13 @@ EPISODES = [
  {"id":"6ba348ca-d1b8-4ae8-886b-d3a06089bd9d","actor":"actor_03","date":"2026-09-04","label":"zipper / zipper pull","shard":"data/train-00190-of-00430.tar"},
  {"id":"7de30e25-7b5c-415e-aabd-bd82ef5403c8","actor":"actor_09","date":"2026-09-20","label":"zipper / zipper pull","shard":"data/train-00151-of-00430.tar"},
 ]
+
+# One manually transcribed candidate was absent from the authoritative metadata
+# index and is excluded rather than guessed or reassigned.
+MANIFEST_EXCLUSIONS = [{
+    "episode_id": "3b7d4145-052a-48e6-bb11-5339be5e8237",
+    "reason": "not present in authoritative metadata/episodes.parquet; target label and shard cannot be verified"
+}]
 
 def seed_all(seed):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
@@ -267,6 +273,8 @@ def main():
         for rows in by_shard.values() for row in rows
     ]).to_csv(OUT/"authoritative_episode_manifest.csv", index=False)
 
+    pd.DataFrame(MANIFEST_EXCLUSIONS).to_csv(OUT/"manifest_exclusions.csv", index=False)
+
     records=[]; audit=[]; start=time.time()
     for shard, rows in sorted(by_shard.items()):
         url=hf_hub_url(repo_id=REPO,filename=shard,repo_type="dataset")
@@ -354,10 +362,11 @@ def main():
     ).reset_index()
     aggregate.to_csv(OUT/"aggregate_metrics.csv",index=False)
     summary={
-        "status":"success","candidate_episodes":len(EPISODES),
+        "status":"success","candidate_episodes":len(EPISODES),"manifest_exclusions":len(MANIFEST_EXCLUSIONS),
         "usable_episodes":len(records),"excluded_episodes":len(EPISODES)-len(records),
         "usable_categories":len(eligible),"episode_counts_by_category":{k:len(v) for k,v in eligible.items()},
         "shots_evaluated":sorted(metrics.shots.unique().tolist()),
+        "shot_feasibility_note":"A shot level is reported only for held-out categories with more independent Episodes than the support size; unavailable levels are omitted, never padded or resampled with replacement.",
         "heldout_category_counts_by_shot":metrics.groupby("shots").heldout_category.nunique().to_dict(),
         "metrics_rows":len(metrics),"elapsed_seconds":round(time.time()-start,2),
         "input":"early 40% continuous 15-pad pressure summaries (45 features)",
