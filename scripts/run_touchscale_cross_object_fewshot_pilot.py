@@ -3,7 +3,7 @@
 Secret injection is handled by the workflow environment (no token literal in source).
 Run manifest is frozen to the reviewed 150-row candidate sample; no full dataset download.
 
-Uses 27 metadata-reviewed candidate episodes across seven normalized target
+Uses 25 verified candidate episodes across seven normalized target
 categories. One example is one complete interaction episode. Input is early
 continuous 15-pad pressure summary; target is the later-window 15-pad
 pairwise Pearson association vector (105 upper-triangle entries).
