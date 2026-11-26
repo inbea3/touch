@@ -226,8 +226,47 @@ def main():
     token=os.environ.get("HF_TOKEN")
     if not token: raise RuntimeError("HF_TOKEN secret missing")
     OUT.mkdir(parents=True,exist_ok=True)
+
+    # Never trust hand-copied shard names in the pilot manifest. Resolve every
+    # Episode against the dataset's authoritative metadata index first.
+    metadata_path = hf_hub_download(
+        repo_id=REPO, filename="metadata/episodes.parquet",
+        repo_type="dataset", token=token
+    )
+    metadata = pd.read_parquet(metadata_path)
+    if not {"episode_id", "shard"}.issubset(metadata.columns):
+        raise RuntimeError(
+            "TouchScale metadata index lacks required episode_id/shard columns: "
+            + str(metadata.columns.tolist())
+        )
+    metadata["episode_id"] = metadata["episode_id"].astype(str)
+    if metadata["episode_id"].duplicated().any():
+        raise RuntimeError("Authoritative metadata contains duplicate episode_id values")
+    shard_lookup = metadata.set_index("episode_id")["shard"].astype(str).to_dict()
+
     by_shard=defaultdict(list)
-    for row in EPISODES: by_shard[row["shard"]].append(row)
+    manifest_ids=[str(row["id"]) for row in EPISODES]
+    if len(manifest_ids) != len(set(manifest_ids)):
+        raise RuntimeError("Pilot manifest contains duplicate Episode IDs")
+    missing_ids=sorted(set(manifest_ids)-set(shard_lookup))
+    if missing_ids:
+        raise RuntimeError(
+            "Episode IDs absent from authoritative TouchScale metadata: "
+            + repr(missing_ids)
+        )
+    for row in EPISODES:
+        row = dict(row)
+        row["shard"] = shard_lookup[str(row["id"])]
+        by_shard[row["shard"]].append(row)
+
+    pd.DataFrame([
+        {"episode_id": row["id"], "normalized_target": row["label"],
+         "authoritative_shard": row["shard"], "manifest_shard": next(
+             original["shard"] for original in EPISODES if original["id"] == row["id"]
+         )}
+        for rows in by_shard.values() for row in rows
+    ]).to_csv(OUT/"authoritative_episode_manifest.csv", index=False)
+
     records=[]; audit=[]; start=time.time()
     for shard, rows in sorted(by_shard.items()):
         url=hf_hub_url(repo_id=REPO,filename=shard,repo_type="dataset")
