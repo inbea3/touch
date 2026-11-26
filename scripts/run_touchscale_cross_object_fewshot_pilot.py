@@ -23,7 +23,6 @@ import numpy as np
 import pandas as pd
 import torch
 from huggingface_hub import hf_hub_url
-from huggingface_hub.file_download import get_hf_file_metadata
 from sklearn.preprocessing import StandardScaler
 
 REPO = "2077AIDataFoundation/TouchScale"
@@ -231,12 +230,11 @@ def main():
     records=[]; audit=[]; start=time.time()
     for shard, rows in sorted(by_shard.items()):
         url=hf_hub_url(repo_id=REPO,filename=shard,repo_type="dataset")
-        # Resolve the authenticated Hub URL to its signed storage URL first.
-        # Bearer headers may be dropped across redirects to Xet/CDN-backed shards.
-        metadata = get_hf_file_metadata(url, token=token)
-        signed_url = metadata.location or url
-        fs=fsspec.filesystem("http",block_size=8*1024*1024)
-        with fs.open(signed_url,"rb") as remote:
+        # Reuse the exact range-read path that succeeded in the earlier
+        # six-episode and nine-episode TouchScale workflows.
+        fs=fsspec.filesystem("http",block_size=8*1024*1024,
+                             headers={"Authorization":f"Bearer {token}"})
+        with fs.open(url,"rb") as remote:
             with tarfile.open(fileobj=remote,mode="r:") as tar:
                 wanted={r["id"]+".episode.h5" for r in rows}; found=set()
                 for member in tar:
