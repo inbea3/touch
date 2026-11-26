@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Audit TouchScale task families for valid cross-participant few-shot episodes.
+Uses metadata only; does not download tactile shard payloads.
 
 Metadata-only: no HDF5 shards are downloaded. Ranks task families by number
 of participants with repeated episodes and reports collection-date confounds.
