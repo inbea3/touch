@@ -1,0 +1,38 @@
+name: TouchScale meta-learning task family audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - thesis-few-shot-structure-20261125
+    paths:
+      - scripts/audit_touchscale_meta_task_families.py
+      - .github/workflows/touchscale-meta-task-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: thesis-few-shot-structure-20261125
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install metadata dependencies
+        run: python -m pip install --upgrade pandas pyarrow huggingface_hub
+      - name: Audit repeated task families across participants
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/audit_touchscale_meta_task_families.py
+      - name: Upload task-family audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchscale-meta-task-family-audit
+          path: artifacts/touchscale_meta_task_audit/
+          if-no-files-found: warn
