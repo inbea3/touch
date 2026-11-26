@@ -1,4 +1,5 @@
 name: TouchScale cross-object few-shot adaptation pilot
+# Re-run after removing one unverifiable Episode from the candidate manifest.
 # Pilot uses authoritative metadata to resolve all episode shard locations.
 
 on:
