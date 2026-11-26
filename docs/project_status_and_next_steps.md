@@ -333,3 +333,21 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 本次提交只建立可复现审计工具链，**尚未运行 workflow，也未下载/实测完整数据**。因此 episode 数、物体级 split overlap、时间戳质量、通道统计及 Go/No-Go 仍全部待实测。
 - GitHub commits：script `93d67833ff53139c9c7d0e32d4e305b0d8f432aa`；mapping `abde74f90af2d7708ee4d8d2e67b6ab8ffefcf7a`；workflow `f170f1c80c91ef6f444e3af66eb946dcd476c15b`。
 - 执行方式：在 GitHub Actions 选择 “HAS pressure-only external audit”，输入 `max_rows_per_split=0` 运行完整审计；首次可先用小样本检查工具链，但小样本结果不得用于 Go/No-Go。
+
+
+
+## 研究路线调整与 TouchScale 少样本结构适应进展（2026-11-26）
+
+> 本节记录 2026-11-22 之后的新研究路线与实验；此前 STAG/HumanGrasp 阶段记录保留为历史工作，不应与 TouchScale 实验结果混合。
+
+- 当前研究定位调整为：面向少样本适应的机器人触觉结构元学习。核心问题为 adaptation，适应目标为 tactile structure，数据范围转向公开 TouchScale pressure-only 数据。当前实验是探索性验证，不代表已完成硕士论文确认性评估。
+- 成功运行：GitHub Actions run `45770119803`，branch `thesis-few-shot-structure-20261125`；Artifact ID `15094653126`，名称 `touchscale-cross-object-fewshot-pilot`。重复运行 `45770125176` 因 Hugging Face CDN HTTP 504 中断，不是模型错误。
+- 本轮实际使用 25 条有效 Episode、7 个 normalized category；1 条候选 Episode 因无法在官方 metadata 索引中核验而排除并留痕。输入为前 40% 时间窗的 15-Pad 压力摘要（45 维），目标为后 40% 时间窗的 15-Pad Pearson 关联上三角（105 维）；按完整 Episode 分隔 Support/Query；LOCO 外层评估；随机种子 17/29/43。
+- 1-shot：pooled MLP 适应后 MAE 0.30261，Reptile 0.22072，按汇总均值相对降低约 27.1%；21 个 category×seed 配对中 Reptile 胜 18 组，类别均值层面 6/7 类别更优。lever switch 是反例（Reptile 0.23398 vs MLP 0.22315）。
+- 2-shot：pooled MLP 适应后 MAE 0.38887，Reptile 0.21972，相对降低约 43.5%；15 个 category×seed 配对全部 Reptile 更优，5 个可评估类别均值方向一致。5-shot 因独立 Episode 不足未评估。
+- 必须区分初始化与适应贡献：Reptile 零样本 MAE 已为 1-shot 0.22558、2-shot 0.22656，明显低于 pooled MLP 的 0.31412、0.40539。因此不能把全部差距归因于 Support 适应收益。
+- 新增参与者重叠审计：25 条候选记录涉及 13 个 manifest actor 标识；LOCO 的 7 个 held-out 类别中，6 个类别的 actor 也出现在其他训练类别。当前结果不能宣称 participant-disjoint generalization。actor/date 字段来自人工整理的候选 manifest/audit；自动核验的官方 metadata 字段为 Episode ID 与 shard。物理 object instance ID 尚未建立。
+- 信号质量日志出现相关矩阵除以零的 RuntimeWarning；当前特征代码将非有限相关值置零。虽然 25/25 Episode 状态为 ok，仍需补充零方差 Pad 数与 NaN 边比例审计。
+- 结果复核报告：`docs/touchscale_cross_object_fewshot_pilot_analysis_20261126.md`。原始结果产物仍保存在 GitHub Actions Artifact；不含原始压力帧。成功运行和产物链接见该报告。
+- 结论边界：当前结果是 25 Episode/7 类别的探索性信号；不能证明普遍 Reptile 优势、参与者无关泛化、5-shot 效果或真实物理/因果结构理解。category×seed 记录并非完全独立统计样本，不将逐边数量用于显著性检验。
+- 下一步决策：先扩展/审计官方 metadata 索引，不立即下载全量压力数据；建立更大且尽量 actor-disjoint 的候选任务池；预先区分 leave-one-category-out 与 actor-disjoint 评估；随后小规模下载必要 shard，补充零方差/NaN 质量检查，再重跑 Reptile 与 Support-matched MLP。暂缓 GNN 和全量训练。
