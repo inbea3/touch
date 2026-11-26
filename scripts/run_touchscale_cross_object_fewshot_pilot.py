@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """TouchScale exploratory cross-object few-shot adaptation pilot.
+Run manifest is frozen to the reviewed 150-row candidate sample; no full dataset download.
 
 Uses 27 metadata-reviewed candidate episodes across seven normalized target
 categories. One example is one complete interaction episode. Input is early
