@@ -1,0 +1,75 @@
+{
+  "archive_file": "classification_lite.zip",
+  "archive_sha256": "ce0f27ae87e8ce2ec405f756dfe278b0b8011ef12e9de93e468b7ef31ad76c58",
+  "metadata_file": "metadata.mat",
+  "metadata_sha256": "19062ed3415df6e21ae055c5149315a5350652a27d59ab55fed74e395f2f1378",
+  "split_manifest_git_blob_sha": "4320d71c77d18383f8130a483565e43c5e379b29",
+  "split_manifest_source_ref": "inbea3/touch@integration/old-research-assets:results/object_episode_splits/object_split_manifest.json",
+  "sensor_seed": 20261116,
+  "split_seed": 20261118,
+  "feature_source": "scripts/run_object_coactivation_baselines.py::extract",
+  "pressure_only": true,
+  "video_used": false,
+  "code_commit": "e03a45ab9cc297db182d66b27f336be09606a41a",
+  "unit_tests": "17/17 Reptile implementation and sensitivity-grid tests passed in GitHub Actions run 44493081143",
+  "status": "real_data_smoke_test_passed_full_experiment_pending",
+  "archive_integrity_verified": true,
+  "metadata_integrity_verified": true,
+  "model_training_executed": true,
+  "unit_tests_executed": true,
+  "experiment_results": "No formal performance results. Smoke metrics are not used for inference; earlier unverified pilot metrics remain invalid and deleted.",
+  "execution_environment_note": "Executed in ephemeral GitHub Actions runner; raw data, extracted features, checkpoints, scaler and detailed result files were not uploaded as artifacts or committed.",
+  "real_data_smoke_test_executed": true,
+  "real_data_smoke_test": {
+    "workflow_run_id": 44491723400,
+    "seed": 20261116,
+    "meta_iterations": 2,
+    "meta_batch_size": 2,
+    "inner_steps": 2,
+    "inner_lr": 0.0005,
+    "outer_step": 0.05,
+    "adapt_steps": 1,
+    "include_meta_test": false,
+    "result_use": "pipeline diagnostic only; not performance evidence",
+    "code_commit": "e03a45ab9cc297db182d66b27f336be09606a41a"
+  },
+  "full_sensitivity_grid_executed": true,
+  "full_multi_seed_experiment_executed": false,
+  "confirmatory_evaluation": false,
+  "unit_test_run_id": 44493081143,
+  "initialization_sha256": "8a023689716a581df3e62e56b95d7e576839815f5155186ad40e9c4dfbcdee79",
+  "strict_task_and_recording_access_match": false,
+  "gradient_update_budget_matched": true,
+  "sensitivity_grid_run_id": 44493070529,
+  "sensitivity_grid_summary_files": [
+    "results/reptile_meta_learning/sensitivity_grid_summary.json",
+    "results/reptile_meta_learning/sensitivity_grid_summary.csv"
+  ],
+  "selected_sensitivity_configuration": {
+    "inner_steps": 10,
+    "inner_lr": 0.001,
+    "outer_step": 0.1,
+    "equal_shot_reptile_mae": 0.1283562105670984,
+    "equal_shot_ordinary_mlp_mae": 0.1244384973515699
+  },
+  "sensitivity_grid_directional_result": {
+    "configurations": 27,
+    "reptile_worse_than_ordinary_1shot": 27,
+    "reptile_worse_than_ordinary_2shot": 27,
+    "interpretation": "exploratory negative result; selected configuration remains slightly worse than ordinary MLP"
+  },
+  "longer_selected_config_validation": {
+    "status": "running",
+    "meta_iterations": 200,
+    "seeds": [
+      20261116,
+      20261117,
+      20261118
+    ],
+    "inner_steps": 10,
+    "inner_lr": 0.001,
+    "outer_step": 0.1,
+    "workflow_run_id": 44494923410,
+    "workflow_url": "https://github.com/inbea3/touch/actions/runs/44494923410"
+  }
+}

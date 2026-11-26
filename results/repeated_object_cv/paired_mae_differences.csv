@@ -1,0 +1,7 @@
+shots,comparison,absolute_improvement_mean,absolute_ci95_low,absolute_ci95_high,relative_reduction_mean,relative_ci95_low,relative_ci95_high,objects_improved,n_objects
+1,constant_minus_mlp_zero_shot,0.01588647,0.01306219,0.01871613,0.11730162,0.09835294,0.13558349,26,26
+2,constant_minus_mlp_zero_shot,0.01588647,0.01297100,0.01875000,0.11730162,0.09841683,0.13581069,26,26
+1,zero_shot_minus_support_adapted,-0.00592436,-0.00831447,-0.00358951,,,,4,26
+2,zero_shot_minus_support_adapted,-0.00119937,-0.00274100,0.00007223,,,,11,26
+1,constant_minus_mlp_support_adapted,0.00996211,0.00585588,0.01403447,0.07424188,0.04253833,0.10503710,20,26
+2,constant_minus_mlp_support_adapted,0.01468710,0.01106468,0.01818286,0.10930093,0.08377588,0.13304929,23,26

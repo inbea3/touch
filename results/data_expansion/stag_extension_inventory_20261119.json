@@ -1,0 +1,109 @@
+{
+  "audit_date": "2026-11-19",
+  "status": "metadata structural audit completed; no model training performed",
+  "scope": "pressure-only STAG metadata; no images/video read",
+  "shared_sensor_layout": {
+    "pressure_shape": "N x 32 x 32",
+    "dtype": "int16",
+    "physical_sensor_positions": 548,
+    "constant_positions": 476,
+    "identical_mask_across_all_four_archives": true,
+    "timestamps_non_decreasing_within_every_recording": true
+  },
+  "datasets": {
+    "classification": {
+      "frames": 135187,
+      "recordings": 82,
+      "physical_objects": 26,
+      "empty_hand_recordings": 4,
+      "valid_label_frames": 88269,
+      "object_recordings": 3,
+      "pressure_min": 446,
+      "pressure_max": 1000,
+      "sha256": "ce0f27ae87e8ce2ec405f756dfe278b0b8011ef12e9de93e468b7ef31ad76c58"
+    },
+    "blindfolded": {
+      "frames": 6686,
+      "recordings": 105,
+      "physical_objects": 26,
+      "empty_hand_recordings": 1,
+      "object_recordings_per_object": 4,
+      "hasValidLabel_frames": 525,
+      "hasValidLabel_frames_per_recording": 5,
+      "splitId_counts": {
+        "1": 6686
+      },
+      "batches": 1,
+      "pressure_min": 509,
+      "pressure_max": 991,
+      "sha256": "e9ef881085a722d51d7765f6b76aa9e26318f6a0a9d59e10cddd3a6ea14f0a40",
+      "decision": "held-out condition-shift descriptive evaluation only; do not meta-train; current correlation target too short with 5 valid frames"
+    },
+    "weights": {
+      "frames": 11682,
+      "recordings": 27,
+      "physical_objects": 26,
+      "empty_hand_recordings": 1,
+      "main_grasp_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "trailing_grasp_index": 6,
+      "trailing_grasp_frames": 128,
+      "trailing_grasp_valid_frames": 0,
+      "graspValid_frames_total": 2301,
+      "graspValid_frames_physical_objects": 2214,
+      "graspValid_frames_empty_hand": 87,
+      "valid_frames_per_main_grasp_index": {
+        "0": 375,
+        "1": 389,
+        "2": 389,
+        "3": 376,
+        "4": 388,
+        "5": 384
+      },
+      "median_valid_frames_per_object_per_main_grasp_index": "14-15",
+      "batches": 1,
+      "pressure_min": 510,
+      "pressure_max": 654,
+      "sha256": "37b1c5fcb246383cdaed552ce07e35690883545cdfdbfc118b48c1cbd2ee3cf3",
+      "decision": "promising repeated-grasp within-object data; assess correlation-label stability before task adaptation"
+    },
+    "handposes": {
+      "frames": 24037,
+      "recordings": 7,
+      "pose_labels": [
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5",
+        "G6",
+        "G7"
+      ],
+      "isGrasp_frames": 7697,
+      "splitId_counts": {
+        "0": 17072,
+        "1": 6965
+      },
+      "batches": 1,
+      "pressure_min": 510,
+      "pressure_max": 992,
+      "sha256": "6babe1d8da0add1a0b8d539739b8473e5e59f925d675ea6a3c5dae1fdfb6ef84",
+      "decision": "not physical-object meta-task data; optional grasp-pose confounding analysis only"
+    }
+  },
+  "conclusions": [
+    "Blind-folded and weight object names exactly match the 26 non-empty classification object names.",
+    "No new independent physical objects are added; object task count remains 26.",
+    "Blind-folded is official test-only according to splitId; all 6686 frames have splitId=1.",
+    "Weight contains six main grasp intervals per object; each interval has only about 14-15 valid frames per object.",
+    "Hand pose labels are grasp types, not physical object identities."
+  ],
+  "license_note": "Archive READMEs state non-commercial use only; check official license and cite authors.",
+  "next_step": "Run pressure-only future sensor-pair correlation label-stability audit on weight grasp intervals before any model training."
+}

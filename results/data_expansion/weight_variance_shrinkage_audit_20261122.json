@@ -1,0 +1,100 @@
+{
+  "audit_date": "2026-11-22",
+  "run": "weight_variance_shrinkage_20261122_run01",
+  "dataset": "STAG Weight pressure-only",
+  "input_sha256": "37b1c5fcb246383cdaed552ce07e35690883545cdfdbfc118b48c1cbd2ee3cf3",
+  "no_model_training": true,
+  "no_video_or_other_modalities": true,
+  "sample": {
+    "physical_objects": 26,
+    "complete_grasp_intervals": 156,
+    "partitions_per_estimator_per_window": 260,
+    "edges_per_matrix": 4560,
+    "valid_frames_per_grasp": [
+      11,
+      15
+    ],
+    "future_frames_per_grasp": [
+      6,
+      10
+    ]
+  },
+  "variance_coverage": {
+    "median_future_frames_per_object": 10,
+    "median_nonzero_variance_sensor_fraction": 1,
+    "median_variance_gt_1e_6_sensor_fraction": 1,
+    "median_effective_sensor_count": 74.4906576764,
+    "mean_object_median_effective_sensor_count": 71.5628058258,
+    "object_bootstrap_ci95_effective_sensor_count": [
+      67.8360570119,
+      74.5514782528
+    ],
+    "threshold_activity_fractions_gt_0_01_0_02_0_05": [
+      1,
+      1,
+      1
+    ],
+    "threshold_note": "All transformed selected-sensor future values exceed 0.05; thresholds are uninformative as contact indicators."
+  },
+  "future_window_estimators": {
+    "pearson": {
+      "edge_spearman_mean": 0.0504327371,
+      "edge_spearman_ci95": [
+        0.0364728925,
+        0.0667118915
+      ],
+      "mean_abs_edge_difference": 0.3394274221,
+      "mean_abs_edge_difference_ci95": [
+        0.3251260419,
+        0.353983754
+      ],
+      "jaccard_r_ge_0_7": 0.0405936425,
+      "jaccard_ci95": [
+        0.028207711,
+        0.0539860063
+      ]
+    },
+    "ledoit_wolf": {
+      "edge_spearman_mean": 0.0512164629,
+      "edge_spearman_ci95": [
+        0.0372863051,
+        0.0674762007
+      ],
+      "mean_abs_edge_difference": 0.2678572098,
+      "mean_abs_edge_difference_ci95": [
+        0.2514059722,
+        0.2839714751
+      ],
+      "jaccard_r_ge_0_7": 0.0405061126,
+      "jaccard_ci95": [
+        0.0259998723,
+        0.0560281178
+      ],
+      "median_shrinkage": 0.121427
+    },
+    "oas": {
+      "edge_spearman_mean": 0.0514162551,
+      "edge_spearman_ci95": [
+        0.0369883695,
+        0.0681742994
+      ],
+      "mean_abs_edge_difference": 0.2326043908,
+      "mean_abs_edge_difference_ci95": [
+        0.2208606787,
+        0.2444524835
+      ],
+      "jaccard_r_ge_0_7": 0.0409968078,
+      "jaccard_ci95": [
+        0.0259413854,
+        0.0570052288
+      ],
+      "median_shrinkage": 0.183775
+    }
+  },
+  "decision": "Shrinkage lowers absolute correlation differences and improves conditioning, but does not materially improve cross-grasp edge rank agreement or r>=0.7 positive-edge overlap. Do not treat six grasp intervals as exchangeable Reptile/ANIL recordings; retain as repeated-grasp variability/label-feasibility analysis.",
+  "bootstrap": {
+    "repetitions": 5000,
+    "seed": 20261122,
+    "unit": "physical object"
+  }
+}

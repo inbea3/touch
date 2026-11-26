@@ -1,0 +1,278 @@
+{
+  "schema_version": "1.0",
+  "dataset": "STAG/HumanGrasp pressure-only classification archive",
+  "scope": "No synchronized video, image annotation, or multimodal data",
+  "seed": 20261118,
+  "split_counts": {
+    "meta_train": 18,
+    "meta_validation": 4,
+    "meta_test": 4
+  },
+  "k_early": 5,
+  "split_strategy": "Deterministic random permutation of sorted non-empty object IDs; 18/4/4",
+  "object_splits": {
+    "meta_train": [
+      {
+        "object_id": 1,
+        "object_name": "allen_key_set",
+        "recording_ids": [
+          16,
+          41,
+          75
+        ]
+      },
+      {
+        "object_id": 2,
+        "object_name": "ball",
+        "recording_ids": [
+          6,
+          31,
+          55
+        ]
+      },
+      {
+        "object_id": 3,
+        "object_name": "battery",
+        "recording_ids": [
+          19,
+          52,
+          57
+        ]
+      },
+      {
+        "object_id": 4,
+        "object_name": "board_eraser",
+        "recording_ids": [
+          15,
+          38,
+          59
+        ]
+      },
+      {
+        "object_id": 7,
+        "object_name": "cat",
+        "recording_ids": [
+          8,
+          33,
+          65
+        ]
+      },
+      {
+        "object_id": 11,
+        "object_name": "empty_can",
+        "recording_ids": [
+          7,
+          36,
+          73
+        ]
+      },
+      {
+        "object_id": 13,
+        "object_name": "gel",
+        "recording_ids": [
+          10,
+          43,
+          79
+        ]
+      },
+      {
+        "object_id": 14,
+        "object_name": "kiwano",
+        "recording_ids": [
+          13,
+          32,
+          80
+        ]
+      },
+      {
+        "object_id": 15,
+        "object_name": "lotion",
+        "recording_ids": [
+          9,
+          53,
+          78
+        ]
+      },
+      {
+        "object_id": 16,
+        "object_name": "mug",
+        "recording_ids": [
+          2,
+          28,
+          76
+        ]
+      },
+      {
+        "object_id": 17,
+        "object_name": "multimeter",
+        "recording_ids": [
+          5,
+          29,
+          74
+        ]
+      },
+      {
+        "object_id": 19,
+        "object_name": "safety_glasses",
+        "recording_ids": [
+          4,
+          42,
+          70
+        ]
+      },
+      {
+        "object_id": 20,
+        "object_name": "scissors",
+        "recording_ids": [
+          21,
+          35,
+          68
+        ]
+      },
+      {
+        "object_id": 21,
+        "object_name": "screw_driver",
+        "recording_ids": [
+          22,
+          50,
+          66
+        ]
+      },
+      {
+        "object_id": 22,
+        "object_name": "spoon",
+        "recording_ids": [
+          24,
+          47,
+          64
+        ]
+      },
+      {
+        "object_id": 23,
+        "object_name": "spray_can",
+        "recording_ids": [
+          12,
+          39,
+          62
+        ]
+      },
+      {
+        "object_id": 25,
+        "object_name": "tape",
+        "recording_ids": [
+          14,
+          49,
+          58
+        ]
+      },
+      {
+        "object_id": 26,
+        "object_name": "tea_box",
+        "recording_ids": [
+          3,
+          40,
+          56
+        ]
+      }
+    ],
+    "meta_validation": [
+      {
+        "object_id": 6,
+        "object_name": "brain",
+        "recording_ids": [
+          17,
+          45,
+          63
+        ]
+      },
+      {
+        "object_id": 8,
+        "object_name": "chain",
+        "recording_ids": [
+          26,
+          46,
+          67
+        ]
+      },
+      {
+        "object_id": 10,
+        "object_name": "coin",
+        "recording_ids": [
+          25,
+          51,
+          71
+        ]
+      },
+      {
+        "object_id": 18,
+        "object_name": "pen",
+        "recording_ids": [
+          18,
+          34,
+          72
+        ]
+      }
+    ],
+    "meta_test": [
+      {
+        "object_id": 5,
+        "object_name": "bracket",
+        "recording_ids": [
+          20,
+          37,
+          61
+        ]
+      },
+      {
+        "object_id": 9,
+        "object_name": "clip",
+        "recording_ids": [
+          23,
+          44,
+          69
+        ]
+      },
+      {
+        "object_id": 12,
+        "object_name": "full_can",
+        "recording_ids": [
+          1,
+          30,
+          77
+        ]
+      },
+      {
+        "object_id": 24,
+        "object_name": "stapler",
+        "recording_ids": [
+          11,
+          48,
+          60
+        ]
+      }
+    ]
+  },
+  "episode_design": {
+    "task_unit": "object",
+    "sample_unit": "recording",
+    "support_shots": [
+      1,
+      2
+    ],
+    "query_rule": "All remaining recordings of the same object",
+    "enumeration": "All combinations; 3 one-shot plus 3 two-shot episodes per object",
+    "total_episodes": 156,
+    "meta_train_episodes": 108,
+    "meta_validation_episodes": 24,
+    "meta_test_episodes": 24,
+    "warning": "Support/Query permutations reuse recordings and are correlated; aggregate metrics by object."
+  },
+  "leakage_checks": {
+    "object_partition_disjoint": true,
+    "recording_partition_complete": true,
+    "same_object_recordings_stay_in_one_split": true,
+    "support_query_recording_disjoint": true,
+    "episode_recordings_match_episode_object": true,
+    "episode_recordings_match_outer_split": true
+  }
+}

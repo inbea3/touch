@@ -1,0 +1,171 @@
+name: First-order ANIL pressure-only meta-learning
+
+on:
+  push:
+    branches:
+      - integration/old-research-assets
+    paths:
+      - "scripts/run_anil_meta_learning.py"
+      - "tests/test_anil_meta_learning.py"
+      - "docs/anil_meta_learning_protocol.md"
+      - ".github/workflows/anil-meta-learning.yml"
+      - "scripts/run_reptile_meta_learning.py"
+      - "scripts/run_object_coactivation_baselines.py"
+      - "scripts/download_dataset.py"
+      - "scripts/audit_dataset.py"
+      - "results/object_episode_splits/object_split_manifest.json"
+      - "requirements-models.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: first-order-anil-meta-learning
+  cancel-in-progress: false
+
+jobs:
+  anil-exploratory-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Check out research code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install model dependencies
+        run: python -m pip install -r requirements-models.txt
+      - name: Compile and test ANIL implementation
+        run: |
+          python -m py_compile scripts/run_anil_meta_learning.py
+          python -m unittest discover -s tests -p 'test_anil_meta_learning.py' -v
+      - name: Download exact selected-validation reference checkpoints and train-only scaler
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: ${{ github.repository }}
+          run_id: 44502406385
+          name: reptile-selected-validation-44502406385-1
+          path: /tmp/reptile-reference
+          skip_unpack: false
+      - name: Verify frozen reference artifact inputs
+        run: |
+          REF=/tmp/reptile-reference/reptile-selected-validation
+          test -s "$REF/reptile_seed_20261116.pt"
+          test -s "$REF/reptile_seed_20261117.pt"
+          test -s "$REF/reptile_seed_20261118.pt"
+          test -s "$REF/ordinary_mlp_seed_20261116.pt"
+          test -s "$REF/ordinary_mlp_seed_20261117.pt"
+          test -s "$REF/ordinary_mlp_seed_20261118.pt"
+          test -s "$REF/reptile_training_trace.csv"
+          test -s "$REF/ordinary_training_trace.csv"
+          test -s "$REF/feature_scaler.npz"
+      - name: Download official pressure-only STAG archive
+        run: python scripts/download_dataset.py --output data/raw/classification_lite.zip
+      - name: Extract and audit metadata
+        run: |
+          python scripts/audit_dataset.py \
+            --archive data/raw/classification_lite.zip \
+            --extract-to data/interim \
+            --output-dir /tmp/stag-data-audit
+          test -s data/interim/metadata.mat
+      - name: Run frozen first-order ANIL experiment
+        run: |
+          python scripts/run_anil_meta_learning.py \
+            --metadata data/interim/metadata.mat \
+            --split-manifest results/object_episode_splits/object_split_manifest.json \
+            --reference-dir /tmp/reptile-reference/reptile-selected-validation \
+            --scaler-npz /tmp/reptile-reference/reptile-selected-validation/feature_scaler.npz \
+            --output-dir /tmp/anil-meta-learning \
+            --seeds 20261116,20261117,20261118 \
+            --nodes 96 \
+            --sensor-seed 20261116 \
+            --meta-iterations 200 \
+            --meta-batch-size 4 \
+            --inner-steps 9 \
+            --inner-lr 0.001 \
+            --outer-lr 0.001 \
+            --adapt-steps 5 \
+            --adapt-lr 0.001 \
+            --batch-size 1024 \
+            --weight-decay 0.001 \
+            --bootstrap-seed 20261121 \
+            --device cpu
+      - name: Verify result counts, compute budget and evaluation boundaries
+        run: |
+          python - <<'PY'
+          import csv
+          import json
+          from pathlib import Path
+          out = Path('/tmp/anil-meta-learning')
+          required = [
+              'anil_summary.json', 'provenance.json',
+              'anil_episode_metrics.csv', 'anil_object_seed_metrics.csv',
+              'anil_object_metrics.csv', 'anil_training_trace.csv',
+              'anil_task_schedule.csv', 'anil_policy_summary.csv',
+              'anil_paired_comparisons.csv',
+              'anil_seed_20261116.pt', 'anil_seed_20261117.pt', 'anil_seed_20261118.pt',
+              'support_matched_anil_schedule_seed_20261116.pt',
+              'support_matched_anil_schedule_seed_20261117.pt',
+              'support_matched_anil_schedule_seed_20261118.pt',
+          ]
+          missing = [name for name in required if not (out / name).is_file() or (out / name).stat().st_size == 0]
+          if missing:
+              raise SystemExit(f'Missing or empty outputs: {missing}')
+          summary = json.loads((out / 'anil_summary.json').read_text())
+          assert summary['algorithm'].startswith('first-order ANIL')
+          assert len(summary['meta_train_objects']) == 18
+          assert summary['n_validation_objects'] == 4
+          assert summary['validation_objects'] == [6, 8, 10, 18]
+          assert summary['seeds'] == [20261116, 20261117, 20261118]
+          assert summary['meta_test_evaluated'] is False
+          assert len(summary['evaluation_policies']) == 2
+          assert len(summary['policy_summary']) == 16
+          assert len(summary['paired_comparisons']) == 14
+          for runtime in summary['runtime_by_seed'].values():
+              assert runtime['support_head_gradient_updates'] == 7200
+              assert runtime['query_gradient_evaluations'] == 800
+              assert runtime['outer_optimizer_updates'] == 200
+              assert runtime['total_backward_passes'] == 8000
+              assert runtime['expected_total_backward_passes'] == 8000
+              assert runtime['support_matched_schedule_gradient_updates'] == 7200
+              assert runtime['reference_models_initialization_verified_from_training_trace'] is True
+          def count(name):
+              with (out / name).open(newline='', encoding='utf-8-sig') as f:
+                  return len(list(csv.DictReader(f)))
+          counts = {
+              'episode_rows': count('anil_episode_metrics.csv'),
+              'object_seed_rows': count('anil_object_seed_metrics.csv'),
+              'object_rows': count('anil_object_metrics.csv'),
+              'trace_rows': count('anil_training_trace.csv'),
+              'task_schedule_rows': count('anil_task_schedule.csv'),
+              'summary_rows': count('anil_policy_summary.csv'),
+              'paired_object_rows': count('anil_paired_comparisons.csv'),
+          }
+          assert counts == {
+              'episode_rows': 864, 'object_seed_rows': 192,
+              'object_rows': 64, 'trace_rows': 600,
+              'task_schedule_rows': 2400, 'summary_rows': 16,
+              'paired_object_rows': 56,
+          }, counts
+          print('ANIL_OUTPUTS_VERIFIED')
+          print(json.dumps({
+              'validation_objects': summary['validation_objects'],
+              'meta_test_evaluated': summary['meta_test_evaluated'],
+              'compute_accounting': summary['compute_accounting'],
+              'counts': counts,
+          }, ensure_ascii=False, indent=2))
+          PY
+      - name: Upload reproducible ANIL outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: anil-meta-learning-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            /tmp/anil-meta-learning/
+            /tmp/stag-data-audit/
+          if-no-files-found: warn
+          retention-days: 30
