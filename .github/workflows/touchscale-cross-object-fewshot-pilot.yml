@@ -29,7 +29,7 @@ jobs:
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch
       - name: Run TouchScale cross-object few-shot pilot
         env:
-          HF_TOKEN: \${{ secrets.HF_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python scripts/run_touchscale_cross_object_fewshot_pilot.py
       - name: Upload pilot metrics and audit (no raw pressure arrays)
         if: always()
