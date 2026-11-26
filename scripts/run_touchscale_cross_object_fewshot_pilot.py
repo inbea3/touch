@@ -23,7 +23,7 @@ import h5py
 import numpy as np
 import pandas as pd
 import torch
-from huggingface_hub import hf_hub_url
+from huggingface_hub import hf_hub_url, hf_hub_download
 from sklearn.preprocessing import StandardScaler
 
 REPO = "2077AIDataFoundation/TouchScale"
