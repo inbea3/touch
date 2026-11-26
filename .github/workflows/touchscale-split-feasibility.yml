@@ -1,0 +1,38 @@
+name: TouchScale LOTO and LOAO split feasibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - thesis-few-shot-structure-20261125
+    paths:
+      - scripts/build_touchscale_split_feasibility.py
+      - .github/workflows/touchscale-split-feasibility.yml
+
+permissions:
+  contents: read
+
+jobs:
+  split-feasibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: thesis-few-shot-structure-20261125
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install metadata dependencies
+        run: python -m pip install --upgrade pandas pyarrow huggingface_hub
+      - name: Build metadata-only LOTO and LOAO manifests
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/build_touchscale_split_feasibility.py
+      - name: Upload split feasibility manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchscale-split-feasibility
+          path: artifacts/touchscale_split_feasibility/
+          if-no-files-found: warn
