@@ -363,3 +363,14 @@ MAML 是可选扩展，不预设其必然胜出。核心增量：
 - 对象身份仍无法由 metadata 充分确立：Episode 的 `items` 是自由文本 involved-object 列表；objects mesh catalogue 不是 Episode 级物理实例 ID。不能据此声称 unseen physical-object-instance adaptation。
 - 新增可行性报告：`docs/touchscale_actor_disjoint_task_family_feasibility_20261126.md`。决策调整为：主研究目标仍为 tactile structure adaptation，但实验单位优先改为 `(scene, task_name) × actor`，论文表述采用跨参与者的已知交互任务触觉结构适应；并行保留完整任务模板留出（LOTO）评估新交互任务适应。两类结果分开报告，不再把 object-category LOCO 结果解释为 participant-independent 或 unseen-instance 泛化。
 - 下一步不是再做 metadata 下载，而是编写并测试 metadata-only split feasibility enumerator：按 LOTO/LOAO 生成 episode-level Support/Query manifest，检查 actor/task 泄漏、shot 可行性和类别/任务覆盖；之后只下载少量候选 shard 做原始信号质量审计。优先 1-shot/2-shot；5-shot 仅在可行子集报告。GNN 继续暂缓。
+
+
+
+## 阶段补充：LOTO/LOAO split feasibility 已真实运行（2026-11-26）
+
+- 新增 metadata-only split enumerator：`scripts/build_touchscale_split_feasibility.py`；workflow：`.github/workflows/touchscale-split-feasibility.yml`。
+- GitHub Actions run `45795358966` 成功，Artifact `15104861509`（`touchscale-split-feasibility`）。本轮读取完整 15,324 条 Episode metadata，无效分组字段 0 条；未下载原始 HDF5 shard 或视频。
+- LOTO（完整留出 `(scene, task_name)`）：1/2/5-shot 分别有 821/807/791 个候选任务模板，3 seeds 对应 2,463/2,421/2,373 条 manifest 记录。LOTO 允许 actor 在其他训练任务中出现，不能称为 unseen-actor。
+- LOAO（全局留出 actor）：1/2/5-shot 分别有 101/95/78 个 actor-task 测试单元，覆盖 20/19/16 个 actor；四个 actor（actor_05、actor_10、actor_21、actor_24）无共享任务模板候选。Support/Query 均按完整 Episode ID 无放回抽样；另一 actor 至少有 2 条同任务模板 Episode 才纳入测试单元。
+- 详细结果：`docs/touchscale_loto_loao_split_feasibility_results_20261126.md`；Artifact 含 summary、任务模板普查、actor-task coverage、LOTO/LOAO Support/Query manifest。它是 metadata 可行性清单，不是模型结果，也不证明 raw signal quality。
+- 下一步已启动小规模原始信号检查：选取两个跨参与者重复任务模板、四个 actor、每个 actor-task 两条高 metadata-quality Episode，共 8 条 Episode；仅下载所需 HDF5 tar members，输出动态结构特征和描述性重复性指标，不提取视频、不训练模型。Workflow run `45795947414` 当前运行中；完成后再决定是否进入新的 actor-disjoint Reptile pilot。
